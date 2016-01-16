@@ -143,6 +143,7 @@ set(SOURCE_FILES
     src/KinectParameters.cpp
     src/PointCloudBuilder.cpp
     src/PointCloudUtilities.cpp
+    src/ColorChecker.cpp
     )
 
 add_executable(test_divide 

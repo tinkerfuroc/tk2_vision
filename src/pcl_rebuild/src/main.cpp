@@ -18,6 +18,7 @@
 #include "pcl_rebuild/PointCloudBuilder.h"
 #include "pcl_rebuild/EntropyFilter.h"
 #include "pcl_rebuild/ImageRebuild.h"
+#include "pcl_rebuild/ColorChecker.h"
 
 using namespace std;
 using namespace tinker::vision;
@@ -41,31 +42,46 @@ int main(int argc, const char * argv[])
    
     cv::Mat raw_depth_mat = ReloadDepthImage(argv[1]);
     cv::Mat raw_image_mat = cv::imread(argv[2]);
+    int cnt_object_found=0;
 
     LineFilter line_filter;
     line_filter.Filter(depth_mat, image_mat);
     EntropyFilter entropy_filter(5, 0.4);
     entropy_filter.Filter(depth_mat, image_mat);
-	PointCloudBuilder * builder = new PointCloudBuilder(depth_mat, image_mat);
+
+    PointCloudBuilder * builder = new PointCloudBuilder(depth_mat, image_mat);
     PointCloudPtr pointCloud = builder->GetPointCloud();
     //pcl::io::savePCDFile(argv[4], *pointCloud, true);
     IPointCloudDivider * divider = new ClusterDivider(pointCloud);
     vector<PointCloudPtr> divided_point_clouds = divider->GetDividedPointClouds();
-    cout << "Objects found:"  << divided_point_clouds.size() << endl;
+    
+    ColorChecker colorChecker(raw_image_mat);
+ 
     char buffer[20];
     for (int i = 0; i < (int) divided_point_clouds.size(); i++)
     {
-        string pcd_prefix = "dividedCloud";
-        string lowRes_prefix = "lowRes";
-        string highRes_prefix = "hiRes";
-        sprintf(buffer, "%d", i);
-        pcl::io::savePCDFile(pcd_prefix + buffer + ".pcd", *divided_point_clouds[i], true);
-        cv::imwrite(lowRes_prefix + buffer + ".png", Get2DImageFromPointCloud(divided_point_clouds[i]));
-        cv::imwrite(highRes_prefix + buffer + ".png",
-                    GetHDImageFromPointCloud(divided_point_clouds[i], raw_image_mat));
+        cv::Mat highResImg = GetHDImageFromPointCloud(divided_point_clouds[i], raw_image_mat);
+        float cc = colorChecker.checkColor(highResImg);
+        cout<<i<<"\t"<<cc<<endl;
+
+        if (cc < 0.9)
+        {
+          string pcd_prefix = "dividedCloud";
+          string lowRes_prefix = "lowRes";
+          string highRes_prefix = "hiRes";
+          ++cnt_object_found;
+          sprintf(buffer, "%d", cnt_object_found);
+
+          pcl::io::savePCDFile(pcd_prefix + buffer + ".pcd", *divided_point_clouds[i], true);
+          cv::imwrite(lowRes_prefix + buffer + ".png", Get2DImageFromPointCloud(divided_point_clouds[i]));
+          cv::imwrite(highRes_prefix + buffer + ".png", highResImg);
+        }
+         
     }
     delete divider;
 	delete builder;
+  
+    cout << "Objects found:"  << cnt_object_found << endl;
 
     PointCloudBuilder * raw_builder = new PointCloudBuilder(raw_depth_mat, raw_image_mat);
     PointCloudPtr raw_pointCloud = raw_builder->GetPointCloud();
