@@ -77,7 +77,7 @@ namespace vision
         for (unsigned i=0; i<cloud->points.size(); i++)
         {
             const pcl::PointXYZRGB & point = cloud->points[i];
-            PixelNumber pxNumber = GetPixelNumber(point, projectionParameter1080);
+            PixelNumber pxNumber = GetPixelNumber(point, projectionParameter);
             if (pxNumber.nx > maxPixelX) maxPixelX = pxNumber.nx;
             if (pxNumber.nx < minPixelX) minPixelX = pxNumber.nx;
             if (pxNumber.ny > maxPixelY) maxPixelY = pxNumber.ny;

@@ -1,2 +1,12 @@
 build
 devel
+
+*.png
+*.pcd
+depth.bin
+output/
+
+*.swp
+*~
+
+tags

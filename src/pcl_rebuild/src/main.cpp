@@ -38,13 +38,17 @@ int main(int argc, const char * argv[])
     cv::Mat depth_mat = ReloadDepthImage(argv[1]);
     cv::Mat image_mat = cv::imread(argv[2]);
     cv::Mat hi_res_image = cv::imread(argv[3]);
+   
+    cv::Mat raw_depth_mat = ReloadDepthImage(argv[1]);
+    cv::Mat raw_image_mat = cv::imread(argv[2]);
+
     LineFilter line_filter;
     line_filter.Filter(depth_mat, image_mat);
     EntropyFilter entropy_filter(5, 0.4);
     entropy_filter.Filter(depth_mat, image_mat);
 	PointCloudBuilder * builder = new PointCloudBuilder(depth_mat, image_mat);
     PointCloudPtr pointCloud = builder->GetPointCloud();
-    pcl::io::savePCDFile(argv[4], *pointCloud, true);
+    //pcl::io::savePCDFile(argv[4], *pointCloud, true);
     IPointCloudDivider * divider = new ClusterDivider(pointCloud);
     vector<PointCloudPtr> divided_point_clouds = divider->GetDividedPointClouds();
     cout << "Objects found:"  << divided_point_clouds.size() << endl;
@@ -58,10 +62,16 @@ int main(int argc, const char * argv[])
         pcl::io::savePCDFile(pcd_prefix + buffer + ".pcd", *divided_point_clouds[i], true);
         cv::imwrite(lowRes_prefix + buffer + ".png", Get2DImageFromPointCloud(divided_point_clouds[i]));
         cv::imwrite(highRes_prefix + buffer + ".png",
-                    GetHDImageFromPointCloud(divided_point_clouds[i], hi_res_image));
+                    GetHDImageFromPointCloud(divided_point_clouds[i], raw_image_mat));
     }
     delete divider;
 	delete builder;
+
+    PointCloudBuilder * raw_builder = new PointCloudBuilder(raw_depth_mat, raw_image_mat);
+    PointCloudPtr raw_pointCloud = raw_builder->GetPointCloud();
+    pcl::io::savePCDFile(argv[4], *raw_pointCloud, true);  
+    delete raw_builder;
+
     return 0;
 }
 
