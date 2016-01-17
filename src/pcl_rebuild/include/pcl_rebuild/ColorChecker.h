@@ -3,14 +3,10 @@
 #ifndef _OBJECTFINDER_COLORCHECKER_H_
 #define _OBJECTFINDER_COLORCHECKER_H_
 
-#include<cmath>
 #include<opencv2/opencv.hpp>
 
 namespace tinker{ 
 namespace vision{
-
-static int getColorHfromRGB(int r, int g, int b);
-static int getColorHfromMatYX(cv::Mat &img, int y, int x);
 
 class ColorChecker
  {

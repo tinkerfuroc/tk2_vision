@@ -62,15 +62,13 @@ int main(int argc, const char * argv[])
     {
         cv::Mat highResImg = GetHDImageFromPointCloud(divided_point_clouds[i], raw_image_mat);
         float cc = colorChecker.checkColor(highResImg);
-        cout<<i<<"\t"<<cc<<endl;
 
         if (cc < 0.9)
         {
           string pcd_prefix = "dividedCloud";
           string lowRes_prefix = "lowRes";
           string highRes_prefix = "hiRes";
-          ++cnt_object_found;
-          sprintf(buffer, "%d", cnt_object_found);
+          sprintf(buffer, "%d", cnt_object_found++);
 
           pcl::io::savePCDFile(pcd_prefix + buffer + ".pcd", *divided_point_clouds[i], true);
           cv::imwrite(lowRes_prefix + buffer + ".png", Get2DImageFromPointCloud(divided_point_clouds[i]));
