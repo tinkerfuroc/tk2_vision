@@ -32,7 +32,7 @@ namespace vision
         cv::Mat gray_scale_image;
         cv::cvtColor(image_mat, gray_scale_image, CV_BGR2GRAY);
         int gray_levels = filter_size_ * filter_size_;
-        double *gray_scale = new double[gray_levels];
+        int *gray_scale = new int[gray_levels];
         int mov_start = filter_size_ / 2;
         for (int i = 0; i < image_mat.rows; i++)
         {
@@ -62,13 +62,14 @@ namespace vision
                     double entropy = 0;
                     for (int k = 0; k < gray_levels; k++)
                     {
-                        double add_entropy = double(gray_scale[k]) * entropy_table_[(int) gray_scale[k]] / double(gray_levels);
+                        double add_entropy = double(gray_scale[k]) * entropy_table_[gray_scale[k]] / double(gray_levels);
                         entropy += add_entropy;
                     }
                     entropy_image.at<double>(i, j) = entropy / entropy_table_[1];
                 }
             }
         }
+        delete [] gray_scale;
         return entropy_image;
     }
 
