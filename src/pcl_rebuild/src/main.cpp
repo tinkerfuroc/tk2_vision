@@ -32,14 +32,13 @@ void PrintUsage();
 
 int main(int argc, const char * argv[])
 {
-    if(argc != 5)
+    if(argc != 4)
     {
         PrintUsage();
         return -1;
     }
     cv::Mat depth_mat = ReloadDepthImage(argv[1]);
     cv::Mat image_mat = cv::imread(argv[2]);
-    cv::Mat hi_res_image = cv::imread(argv[3]);
    
     cv::Mat raw_depth_mat = ReloadDepthImage(argv[1]);
     cv::Mat raw_image_mat = fixColor(cv::imread(argv[2]), 3);
@@ -52,7 +51,7 @@ int main(int argc, const char * argv[])
 
     PointCloudBuilder * builder = new PointCloudBuilder(depth_mat, image_mat);
     PointCloudPtr pointCloud = builder->GetPointCloud();
-    //pcl::io::savePCDFile(argv[4], *pointCloud, true);
+    
     IPointCloudDivider * divider = new ClusterDivider(pointCloud);
     vector<PointCloudPtr> divided_point_clouds = divider->GetDividedPointClouds();
     
@@ -84,7 +83,7 @@ int main(int argc, const char * argv[])
 
     PointCloudBuilder * raw_builder = new PointCloudBuilder(raw_depth_mat, raw_image_mat);
     PointCloudPtr raw_pointCloud = raw_builder->GetPointCloud();
-    pcl::io::savePCDFile(argv[4], *raw_pointCloud, true);  
+    pcl::io::savePCDFile(argv[3], *raw_pointCloud, true);  
     delete raw_builder;
 
     return 0;
@@ -121,5 +120,5 @@ void PrintPojectedXY(double x, double y, double z, double projectionMatrix[3][4]
 
 void PrintUsage()
 {
-    cout << "KinectToPCL depthBinFile registeredImage rgbImage saveFile" << endl;
+    cout << "KinectToPCL depthBinFile registeredImage saveFile" << endl;
 }
