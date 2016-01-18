@@ -19,6 +19,7 @@
 #include "pcl_rebuild/EntropyFilter.h"
 #include "pcl_rebuild/ImageRebuild.h"
 #include "pcl_rebuild/ColorChecker.h"
+#include "pcl_rebuild/ColorFixer.h"
 
 using namespace std;
 using namespace tinker::vision;
@@ -71,7 +72,7 @@ int main(int argc, const char * argv[])
           sprintf(buffer, "%d", cnt_object_found++);
 
           pcl::io::savePCDFile(pcd_prefix + buffer + ".pcd", *divided_point_clouds[i], true);
-          cv::imwrite(lowRes_prefix + buffer + ".png", Get2DImageFromPointCloud(divided_point_clouds[i]));
+          cv::imwrite(lowRes_prefix + buffer + ".png", fixColor(Get2DImageFromPointCloud(divided_point_clouds[i])));
           cv::imwrite(highRes_prefix + buffer + ".png", highResImg);
         }
          

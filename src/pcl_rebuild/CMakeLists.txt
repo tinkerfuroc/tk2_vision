@@ -144,6 +144,7 @@ set(SOURCE_FILES
     src/PointCloudBuilder.cpp
     src/PointCloudUtilities.cpp
     src/ColorChecker.cpp
+    src/ColorFixer.cpp
     )
 
 add_executable(test_divide 

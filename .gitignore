@@ -2,8 +2,9 @@ build
 devel
 
 *.png
+*.bmp
 *.pcd
-depth.bin
+*.bin
 output/
 
 *.swp
