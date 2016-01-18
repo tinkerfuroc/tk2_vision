@@ -42,7 +42,7 @@ int main(int argc, const char * argv[])
     cv::Mat hi_res_image = cv::imread(argv[3]);
    
     cv::Mat raw_depth_mat = ReloadDepthImage(argv[1]);
-    cv::Mat raw_image_mat = cv::imread(argv[2]);
+    cv::Mat raw_image_mat = fixColor(cv::imread(argv[2]), 3);
     int cnt_object_found=0;
 
     LineFilter line_filter;
@@ -72,7 +72,7 @@ int main(int argc, const char * argv[])
           sprintf(buffer, "%d", cnt_object_found++);
 
           pcl::io::savePCDFile(pcd_prefix + buffer + ".pcd", *divided_point_clouds[i], true);
-          cv::imwrite(lowRes_prefix + buffer + ".png", fixColor(Get2DImageFromPointCloud(divided_point_clouds[i])));
+          cv::imwrite(lowRes_prefix + buffer + ".png", Get2DImageFromPointCloud(divided_point_clouds[i]));
           cv::imwrite(highRes_prefix + buffer + ".png", highResImg);
         }
          
