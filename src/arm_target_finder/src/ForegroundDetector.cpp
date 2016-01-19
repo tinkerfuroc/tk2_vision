@@ -5,10 +5,6 @@
 #include <cassert>
 #include <cmath>
 
-void FUCK(int x){ROS_INFO("fuck %d", x);}
-void FUCK(float x){ROS_INFO("fuck %f", x);}
-void FUCK(char *x){ROS_INFO("fuck %s", x);}
-
 namespace tinker
 {
     namespace vision
@@ -362,29 +358,6 @@ namespace tinker
             return s;
         }
         
-        void ForegroundDetector::DrawRectOnDetect(const cv::Mat & source_mat, cv::Mat & desk_mat, ZhuangBiObjectInfo **objs, int objnum)
-        {
-            source_mat.copyTo(desk_mat);
-            //dirty work :convert ZhuangBiObjectInfo** into ObjectInfo**
-            tinker::vision::ObjectInfo **objs_plain = new ObjectInfo*[objnum];
-            for (int i = 0; i < objnum; i++)
-            {
-                objs_plain[i] = (ObjectInfo *)objs[i];
-            }
-            similarity_ s = FilterByObject(source_mat, objs_plain, objnum);
-            //zhuang bi
-            if (s.object_no != -1)
-            {
-                ZhuangBiObjectInfo *obj = objs[s.object_no];
-                ROS_INFO("find %s, probability %f", obj->GetName(), (float)s.dotproduct);
-                cv::rectangle(desk_mat, s.pos, obj->GetColor());
-            }
-            else 
-            {
-                ROS_INFO("find nothing");
-            }
-        }
-        
         cv::Mat ForegroundDetector::TakePhoto(const cv::Mat & source_mat)
         {
             cv::Mat desk_mat;
@@ -392,6 +365,31 @@ namespace tinker
             cv::Mat roi(source_mat, s.pos);
             roi.copyTo(desk_mat);
             return desk_mat;
+        }
+        
+        void ForegroundDetector::FindObject(const cv::Mat & source_mat, bool &object_recognized, float &object_similarity, 
+            const char *&object_name, cv::Rect &object_pos, ZhuangBiObjectInfo **objs, int objnum)
+        {
+            tinker::vision::ObjectInfo **objs_plain = new ObjectInfo*[objnum];
+            for (int i = 0; i < objnum; i++)
+            {
+                objs_plain[i] = (ObjectInfo *)objs[i];
+            }
+            similarity_ s = FilterByObject(source_mat, objs_plain, objnum);
+            if (s.object_no != -1)
+            {
+                object_recognized = true;
+                object_similarity = s.dotproduct;
+                ZhuangBiObjectInfo *obj = objs[s.object_no];
+                object_name = obj->GetName();
+            }
+            else 
+            {
+                object_recognized = false;
+                object_similarity = 0.0;
+                object_name = "";
+            }
+            object_pos = s.pos;
         }
         
     }

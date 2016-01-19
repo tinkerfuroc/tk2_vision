@@ -33,7 +33,8 @@ namespace tinker
             ForegroundDetector(int filter_size, double entropy_threshold, double similarity_threshold);
             ~ForegroundDetector();
             void Filter(const cv::Mat & source_mat, cv::Mat & desk_mat);
-            void DrawRectOnDetect(const cv::Mat & source_mat, cv::Mat & desk_mat, ZhuangBiObjectInfo **objs, int objnum);
+            void FindObject(const cv::Mat & source_mat, bool &object_recognized, float &object_similarity, 
+                const char *&object_name, cv::Rect &object_pos, ZhuangBiObjectInfo **objs, int objnum);
             cv::Mat TakePhoto(const cv::Mat & source_mat);
         private:
             //help struct
