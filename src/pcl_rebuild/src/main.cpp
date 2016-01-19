@@ -36,9 +36,9 @@ int main(int argc, const char * argv[])
     {
         PrintUsage();
         return -1;
-    }
+     }
     cv::Mat depth_mat = ReloadDepthImage(argv[1]);
-    cv::Mat image_mat = cv::imread(argv[2]);
+    cv::Mat image_mat = fixColor(cv::imread(argv[2]),5);
    
     cv::Mat raw_depth_mat = ReloadDepthImage(argv[1]);
     cv::Mat raw_image_mat = fixColor(cv::imread(argv[2]), 3);
