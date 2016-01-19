@@ -1,5 +1,6 @@
 build
 devel
+install
 
 *.png
 *.bmp
