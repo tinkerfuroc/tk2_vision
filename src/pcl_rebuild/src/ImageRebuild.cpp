@@ -21,11 +21,14 @@ namespace vision
     };
 
     const int kLowResWidth = 512;
-    const int kLowResHeight = 424;
-    const int kHighResWidth = 1920;
+    const int kLowResHeight = 424, kLowResTop = 19, kLowResBottom = 35;
+    const int kHighResWidth = 1920, kHighResLeft = 255, kHighResRight = 157;
     const int kHighResHeight = 1080;
+    const int kLowResActualHeight = kLowResHeight - kLowResTop - kLowResBottom;
+    const int kHighResActualWidth  = kHighResWidth - kHighResLeft - kHighResRight; 
 
     static PixelNumber GetPixelNumber(const pcl::PointXYZRGB &point, double projectionMat[3][4]);
+    static void lowResToHiRes(PixelNumber& point);
 
     cv::Mat Get2DImageFromPointCloud(PointCloudPtr cloud)
     {
@@ -70,7 +73,7 @@ namespace vision
                        cv::Range(minPixelX, maxPixelX+1));
     }
 
-    cv::Mat GetHDImageFromPointCloud(PointCloudPtr cloud, cv::Mat &totalImage)
+    cv::Mat GetHDImageFromPointCloud(PointCloudPtr cloud, cv::Mat &totalImage, bool hiRes)
     {
         int minPixelX = INT32_MAX, maxPixelX = -1;
         int minPixelY = INT32_MAX, maxPixelY = -1;
@@ -78,6 +81,7 @@ namespace vision
         {
             const pcl::PointXYZRGB & point = cloud->points[i];
             PixelNumber pxNumber = GetPixelNumber(point, projectionParameter);
+            if (hiRes) lowResToHiRes(pxNumber);
             if (pxNumber.nx > maxPixelX) maxPixelX = pxNumber.nx;
             if (pxNumber.nx < minPixelX) minPixelX = pxNumber.nx;
             if (pxNumber.ny > maxPixelY) maxPixelY = pxNumber.ny;
@@ -86,7 +90,8 @@ namespace vision
         minPixelX = minPixelX < 0 ? 0 : minPixelX;
         maxPixelX = maxPixelX >= totalImage.cols ? totalImage.cols - 1 : maxPixelX;
         minPixelY = minPixelY < 0 ? 0 : minPixelY;
-        maxPixelY = maxPixelY >= totalImage.cols ? totalImage.cols - 1 : maxPixelY;
+        maxPixelY = maxPixelY >= totalImage.rows ? totalImage.rows - 1 : maxPixelY;
+        
         return cv::Mat(totalImage,
                        cv::Range(minPixelY, maxPixelY+1),
                        cv::Range(minPixelX, maxPixelX+1));
@@ -107,5 +112,12 @@ namespace vision
         pixelNumber.ny = (int)(projectedPoint[1] / projectedPoint[2]);
         return pixelNumber;
     }
+    
+    static void lowResToHiRes(PixelNumber &point)
+    {
+      point.nx = (point.nx * kHighResActualWidth / kLowResWidth ) + kHighResLeft;
+      point.ny = (point.ny - kLowResTop ) * kHighResHeight / kLowResActualHeight;
+    }
+
 }
 }
