@@ -13,13 +13,14 @@ namespace tinker
 namespace vision
 {   
 extern const int kLowResWidth;
-extern const int kLowResHeight;
-extern const int kHighResWidth;
+extern const int kLowResHeight, kLowResTop, kLowResBottom;
+extern const int kHighResWidth, kHighResLeft, kHighResRight;
 extern const int kHighResHeight;
+extern const int kLowResActualHeight, kHighResActualWidth;
 
 cv::Mat Get2DImageFromPointCloud(PointCloudPtr cloud);
 
-cv::Mat GetHDImageFromPointCloud(PointCloudPtr cloud, cv::Mat & totalImage);
+cv::Mat GetHDImageFromPointCloud(PointCloudPtr cloud, cv::Mat & totalImage, bool hiRes = false);
 }
 }
 

@@ -55,9 +55,10 @@ float ColorChecker::checkColor(cv::Mat & img, int threshold)
       if (abs(h-_maxColorH)<=threshold || abs(h+360-_maxColorH)<=threshold || abs(h-360-_maxColorH)<=threshold ) 
       { 
         ++cntBkColorP; 
-        //img.at<cv::Vec3b>(y,x)[0]=0;
-        //img.at<cv::Vec3b>(y,x)[1]=0;
-        //img.at<cv::Vec3b>(y,x)[2]=0;
+      /*  img.at<cv::Vec3b>(y,x)[0]=255;
+        img.at<cv::Vec3b>(y,x)[1]=0;
+        img.at<cv::Vec3b>(y,x)[2]=0;
+       */
       }
     }
   }
