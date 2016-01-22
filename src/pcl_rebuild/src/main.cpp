@@ -63,7 +63,7 @@ int main(int argc, const char * argv[])
      {
         cv::Mat highResImg = GetHDImageFromPointCloud(divided_point_clouds[i], raw_image_mat);
         float cc = colorChecker.checkColor(highResImg); 
-        
+         
         if (cc < 0.9)
         {
           string pcd_prefix = "dividedCloud";
