@@ -20,6 +20,8 @@ extern const int kLowResActualHeight, kHighResActualWidth;
 
 cv::Mat Get2DImageFromPointCloud(PointCloudPtr cloud);
 
+cv::Rect GetHDRectFromPointCloud(PointCloudPtr cloud, cv::Mat & totalImage, bool hiRes = false);
+
 cv::Mat GetHDImageFromPointCloud(PointCloudPtr cloud, cv::Mat & totalImage, bool hiRes = false);
 }
 }
