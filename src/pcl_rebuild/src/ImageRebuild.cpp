@@ -73,8 +73,8 @@ namespace vision
                        cv::Range(minPixelX, maxPixelX+1));
     }
 
-    cv::Mat GetHDImageFromPointCloud(PointCloudPtr cloud, cv::Mat &totalImage, bool hiRes)
-    {
+    cv::Rect GetHDRectFromPointCloud(PointCloudPtr cloud, cv::Mat &totalImage, bool hiRes)
+    { 
         int minPixelX = INT32_MAX, maxPixelX = -1;
         int minPixelY = INT32_MAX, maxPixelY = -1;
         for (unsigned i=0; i<cloud->points.size(); i++)
@@ -92,9 +92,18 @@ namespace vision
         minPixelY = minPixelY < 0 ? 0 : minPixelY;
         maxPixelY = maxPixelY >= totalImage.rows ? totalImage.rows - 1 : maxPixelY;
         
-        return cv::Mat(totalImage,
-                       cv::Range(minPixelY, maxPixelY+1),
-                       cv::Range(minPixelX, maxPixelX+1));
+		 return  cv::Rect(minPixelX, minPixelY, 
+				          maxPixelX-minPixelX+1,
+				          maxPixelY-minPixelY+1 );
+				 
+    }
+
+
+    cv::Mat GetHDImageFromPointCloud(PointCloudPtr cloud, cv::Mat &totalImage, bool hiRes)
+    {
+ 		 return cv::Mat(totalImage,
+                 GetHDRectFromPointCloud(cloud, totalImage, hiRes)
+					 );
     }
 
     static PixelNumber GetPixelNumber(const pcl::PointXYZRGB &point, double projectionMat[3][4])

@@ -62,6 +62,7 @@ int main(int argc, const char * argv[])
     for (int i = 0; i < (int) divided_point_clouds.size(); i++)
      {
         cv::Mat highResImg = GetHDImageFromPointCloud(divided_point_clouds[i], raw_image_mat);
+        if (highResImg.rows > highResImg.cols*5 ) continue;                   
         float cc = colorChecker.checkColor(highResImg); 
          
         if (cc < 0.9)
@@ -78,7 +79,7 @@ int main(int argc, const char * argv[])
           cv::imwrite(highRes_prefix + buffer + ".png", GetHDImageFromPointCloud(divided_point_clouds[i], hiRes_image_mat, true )); 
         }
          
-    }
+     }
     	
     delete divider;
     delete builder;
