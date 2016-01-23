@@ -1,13 +1,23 @@
 #include "ros/ros.h"
 #include "kinect_interesting_points/InterestingPoints.h"
+#include "pcl_rebuild/Protonect.h"
+
+using namespace tinker::vision;
 
 bool getPoints(kinect_interesting_points::InterestingPoints::Request  &req,
                kinect_interesting_points::InterestingPoints::Response &res)
 {
-  res.cntPoints = 12;
-  res.x.push_back(1.0f);
-  res.y.push_back(-23.0f);
-  res.z.push_back(123.0f);
+  std::vector<cv::Point3f> points;
+  getInterestingPoints(points);
+  
+  res.cntPoints = points.size();
+  for (int i=0; i<res.cntPoints; ++i)
+  {
+	  res.x.push_back(points[i].x);
+	  res.y.push_back(points[i].y);
+	  res.z.push_back(points[i].z);
+  }
+
   return true;
 }
 

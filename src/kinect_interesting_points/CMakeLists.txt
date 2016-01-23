@@ -1,6 +1,10 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(kinect_interesting_points)
 
+find_package(OpenCV REQUIRED)
+find_package(PCL 1.7 REQUIRED)
+find_package(freenect2 REQUIRED) ## Make sure you've install libfreenect2
+
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
@@ -118,9 +122,19 @@ catkin_package(
 # include_directories(include)
 include_directories(
   ${catkin_INCLUDE_DIRS}
+  ${freenect2_INCLUDE_DIR}
+  ${OpenCV_INCLUDE_DIRS}
+  ${PCL_INCLUDE_DIRS}
+  ./include/
 )
 
+LINK_DIRECTORIES(
+  ${PCL_LIBRARY_DIRS}
+)
 
+ADD_DEFINITIONS(
+	${PCL_DEFINITIONS}
+	)
 
 
 ## Declare a C++ library
@@ -138,10 +152,23 @@ include_directories(
 
 add_executable(kinect_interesting_points_server 
 	src/kinect_interesting_points_server.cpp
+  src/Protonect.cpp
+  src/ClusterDivider.cpp
+  src/ColorChecker.cpp
+  src/ColorFixer.cpp
+  src/EntropyFilter.cpp
+  src/ImageRebuild.cpp
+  src/KinectParameters.cpp
+  src/LineFilter.cpp
+  src/PointCloudBuilder.cpp
+  src/PointCloudUtilities.cpp
 	)
 add_executable(kinect_interesting_points_client
 	src/kinect_interesting_points_client.cpp
 	)
+#ADD_EXECUTABLE(Protonect
+#)
+
 
 ## Add cmake target dependencies of the executable
 ## same as for the library above
@@ -159,10 +186,15 @@ add_dependencies(kinect_interesting_points_client
 # )
 target_link_libraries(kinect_interesting_points_server
 	${catkin_LIBRARIES}
+  ${freenect2_LIBRARIES}
+  ${OpenCV_LIBS}
+  ${PCL_LIBRARIES}
 	)
 target_link_libraries(kinect_interesting_points_client
 	${catkin_LIBRARIES}
 	)
+#TARGET_LINK_LIBRARIES(Protonect
+#)
 
 #############
 ## Install ##

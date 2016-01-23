@@ -12,6 +12,10 @@ int main(int argc, char **argv)
   if (client.call(srv))
   {
     ROS_INFO("Cnt: %d", (int)srv.response.cntPoints);
+	for (int i=0; i<srv.response.cntPoints; ++i)
+	{
+		ROS_INFO("%d\t%f,%f,%f", i, srv.response.x[i], srv.response.y[i], srv.response.z[i]);
+	}
   }
   else
   {
