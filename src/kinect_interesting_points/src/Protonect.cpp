@@ -69,11 +69,6 @@ static void sigint_handler(int s)
   protonect_shutdown = true;
 }
 
-typedef struct {
-  cv::Point point;
-  cv::Scalar color;
-} PointT;
-
 //The following demostrates how to create a custom logger
 // logger
 
@@ -113,34 +108,23 @@ static void delay_ms(int time_ms)
 
 static cv::Point3f getWeightPoint(PointCloudPtr cloud)
 {
-	float sX=0, sY=0, sZ=0;
-	int size= cloud->width*cloud->height;
+  float sX=0, sY=0, sZ=0;
+  int size= cloud->width*cloud->height;
 
-	for (int i=0; i<size; ++i)
-	{
-		pcl::PointXYZRGB point = cloud->points[i];
-		sX+=point.x; sY+=point.y; sZ+=point.z;
-	}
+  for (int i=0; i<size; ++i)
+  {
+    pcl::PointXYZRGB point = cloud->points[i];
+    sX+=point.x; sY+=point.y; sZ+=point.z;
+  }
 
-	
-	return cv::Point3f(sX/size, sY/size, sZ/size);
-	
+  
+  return cv::Point3f(sX/size, sY/size, sZ/size);
+  
 }
 
 //int main(int argc, char *argv[])
 void getInterestingPoints(std::vector<cv::Point3f> & points)
 { 
-
-//  std::string program_path(argv[0]);
-//  std::cerr << "Environment variables: LOGFILE=<protonect.log>" << std::endl;
-//  size_t executable_name_idx = program_path.rfind("Protonect");
-
-//  std::string binpath = "/";
-
-//  if(executable_name_idx != std::string::npos)
-//  {
-//    binpath = program_path.substr(0, executable_name_idx);
-//  }
 
   // create a console logger with debug level (default is console logger with info level)
   libfreenect2::setGlobalLogger(libfreenect2::createConsoleLogger(libfreenect2::Logger::Debug));
@@ -194,8 +178,8 @@ void getInterestingPoints(std::vector<cv::Point3f> & points)
 
 // loop start  
   
-//  while(!protonect_shutdown)
-//  {
+//while(!protonect_shutdown)
+//{
     
     listener.waitForNewFrame(frames);
     libfreenect2::Frame *rgb = frames[libfreenect2::Frame::Color];
@@ -205,37 +189,37 @@ void getInterestingPoints(std::vector<cv::Point3f> & points)
 // registration
     registration->apply(rgb, depth, &undistorted, &registered);
         
-      framecount++;
-	  std::cout<<"["<<framecount<<"]"<<std::endl;
+    framecount++;
+    std::cout<<"["<<framecount<<"]"<<std::endl;
 
-     cv::Mat depthMatrix(depth->height, depth->width, CV_32FC1, depth->data);
-     depthMatrix /= 4500.0f;
-      cv::Mat rgbMatrix(rgb->height, rgb->width , CV_8UC4, rgb->data);    
-      cv::Mat display(720, 1280, CV_8UC3);
-      cv::resize(rgbMatrix, display, display.size());
+    cv::Mat depthMatrix(depth->height, depth->width, CV_32FC1, depth->data);
+    depthMatrix /= 4500.0f;
+    cv::Mat rgbMatrix(rgb->height, rgb->width , CV_8UC4, rgb->data);    
+    cv::Mat display(720, 1280, CV_8UC3);
+    cv::resize(rgbMatrix, display, display.size());
 
 
     cv::Mat registeredMatrix(registered.height, registered.width, CV_8UC4, registered.data);
 
-      LineFilter line_filter;
-      line_filter.Filter(depthMatrix, registeredMatrix);
-      EntropyFilter entropy_filter(5, 0.4);
-      entropy_filter.Filter(depthMatrix, registeredMatrix);
+    LineFilter line_filter;
+    line_filter.Filter(depthMatrix, registeredMatrix);
+    EntropyFilter entropy_filter(5, 0.4);
+    entropy_filter.Filter(depthMatrix, registeredMatrix);
       
-      PointCloudBuilder * builder = new PointCloudBuilder(depthMatrix, registeredMatrix);
-      PointCloudPtr pointCloud = builder->GetPointCloud();
-      IPointCloudDivider * divider = new ClusterDivider(pointCloud);
-      std::vector<PointCloudPtr> divided_point_clouds = divider->GetDividedPointClouds();
+    PointCloudBuilder * builder = new PointCloudBuilder(depthMatrix, registeredMatrix);
+    PointCloudPtr pointCloud = builder->GetPointCloud();
+    IPointCloudDivider * divider = new ClusterDivider(pointCloud);
+    std::vector<PointCloudPtr> divided_point_clouds = divider->GetDividedPointClouds();
 
-	  listener.release(frames);
-	
-     points.clear();
-	 for (int i=0; i<(int)divided_point_clouds.size(); ++i)
-	 {
-		points.push_back(getWeightPoint(divided_point_clouds[i]));
-	 }
+    listener.release(frames);
+  
+    points.clear();
+    for (int i=0; i<(int)divided_point_clouds.size(); ++i)
+    {
+      points.push_back(getWeightPoint(divided_point_clouds[i]));
+    }
 
-//   }
+//}
 
 // stop
   dev->stop();

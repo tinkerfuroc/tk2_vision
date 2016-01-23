@@ -133,8 +133,8 @@ LINK_DIRECTORIES(
 )
 
 ADD_DEFINITIONS(
-	${PCL_DEFINITIONS}
-	)
+  ${PCL_DEFINITIONS}
+  )
 
 
 ## Declare a C++ library
@@ -151,7 +151,7 @@ ADD_DEFINITIONS(
 # add_executable(kinect_interesting_points_node src/kinect_interesting_points_node.cpp)
 
 add_executable(kinect_interesting_points_server 
-	src/kinect_interesting_points_server.cpp
+  src/kinect_interesting_points_server.cpp
   src/Protonect.cpp
   src/ClusterDivider.cpp
   src/ColorChecker.cpp
@@ -162,39 +162,36 @@ add_executable(kinect_interesting_points_server
   src/LineFilter.cpp
   src/PointCloudBuilder.cpp
   src/PointCloudUtilities.cpp
-	)
+  )
 add_executable(kinect_interesting_points_client
-	src/kinect_interesting_points_client.cpp
-	)
-#ADD_EXECUTABLE(Protonect
-#)
+  src/kinect_interesting_points_client.cpp
+  )
+
 
 
 ## Add cmake target dependencies of the executable
 ## same as for the library above
 # add_dependencies(kinect_interesting_points_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 add_dependencies(kinect_interesting_points_server
-	kinect_interesting_points_gencpp
-	)
+  kinect_interesting_points_gencpp
+  )
 add_dependencies(kinect_interesting_points_client
-	kinect_interesting_points_gencpp
-	)
+  kinect_interesting_points_gencpp
+  )
 
 ## Specify libraries to link a library or executable target against
 # target_link_libraries(kinect_interesting_points_node
 #   ${catkin_LIBRARIES}
 # )
 target_link_libraries(kinect_interesting_points_server
-	${catkin_LIBRARIES}
+  ${catkin_LIBRARIES}
   ${freenect2_LIBRARIES}
   ${OpenCV_LIBS}
   ${PCL_LIBRARIES}
-	)
+  )
 target_link_libraries(kinect_interesting_points_client
-	${catkin_LIBRARIES}
-	)
-#TARGET_LINK_LIBRARIES(Protonect
-#)
+  ${catkin_LIBRARIES}
+  )
 
 #############
 ## Install ##
