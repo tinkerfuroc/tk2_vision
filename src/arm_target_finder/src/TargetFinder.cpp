@@ -19,11 +19,13 @@
 #include <ros/ros.h>
 #include <vector>
 #include <string>
+#include <unistd.h>
 
 void ArmCamImgCallback(const sensor_msgs::Image::ConstPtr& msg);
 
 tinker::vision::ForegroundDetector fd(8, 0.265, 0.73);
 ros::Publisher pub;
+using std::string;
 
 static const int ImageTypeNum = 6;
 static const char *ImageTypeName[] = 
@@ -48,6 +50,7 @@ static const cv::Scalar ImageTypeRectColor[] =
     cv::Scalar(0, 0, 0), 
     //cv::Scalar(255, 255, 255), 
 };
+
 static const int ImageTypePhotonum[] = 
 {
     //4,
@@ -59,6 +62,7 @@ static const int ImageTypePhotonum[] =
     2,
     //3,
 };
+
 tinker::vision::ZhuangBiObjectInfo **objs;
 
 int sumofimages = 0;
