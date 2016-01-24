@@ -93,7 +93,7 @@ namespace vision
         d_dst = CannyDownSample(dst, downsampleStep);
         cvtColor(depth_mat, cdst, COLOR_GRAY2BGR);
 #ifdef __DEBUG__
-        imwrite("CannyDownsampled.png", d_dst); 
+//        imwrite("CannyDownsampled.png", d_dst); 
 #endif
 
         vector<Vec4i> lines;
@@ -111,7 +111,7 @@ namespace vision
 #endif
         } 
 #ifdef __DEBUG__
-        imwrite("CannyAfterLineFilter.png", dst);
+//        imwrite("CannyAfterLineFilter.png", dst);
 #endif
         cvtColor(cdst, depth_mat, COLOR_RGB2GRAY);
     }

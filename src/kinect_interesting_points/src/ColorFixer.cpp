@@ -3,7 +3,7 @@
 namespace tinker{
 namespace vision{
 
-static bool isUselessPoint(cv::Vec3b point)
+bool isUselessPoint(cv::Vec3b point)
 {
   return point[0]+point[1]+point[2]==0 
         || point[0]==255&&point[1]==255&&point[2]==255 ;

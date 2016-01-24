@@ -8,6 +8,8 @@ install
 *.bin
 output/
 
+*.sh
+
 *.swp
 *~
 
