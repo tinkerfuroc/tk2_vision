@@ -46,6 +46,8 @@
 
 #include <opencv2/opencv.hpp>
 
+#include <pcl/filters/passthrough.h>
+
 #include "pcl_rebuild/PointCloudBuilder.h"
 #include "pcl_rebuild/ClusterDivider.h"
 #include "pcl_rebuild/LineFilter.h"
@@ -208,7 +210,15 @@ void getInterestingPoints(std::vector<cv::Point3f> & points)
       
     PointCloudBuilder * builder = new PointCloudBuilder(depthMatrix, registeredMatrix);
     PointCloudPtr pointCloud = builder->GetPointCloud();
-    IPointCloudDivider * divider = new ClusterDivider(pointCloud);
+
+	pcl::PassThrough<pcl::PointXYZRGB> pass;
+	pass.setInputCloud(pointCloud);
+	pass.setFilterFieldName("z");
+	pass.setFilterLimits(0,200);
+	PointCloudPtr nearCloud(new pcl::PointCloud<pcl::PointXYZRGB>); 
+	pass.filter(*nearCloud);
+
+    IPointCloudDivider * divider = new ClusterDivider(nearCloud);
     std::vector<PointCloudPtr> divided_point_clouds = divider->GetDividedPointClouds();
 
     listener.release(frames);
@@ -217,7 +227,7 @@ void getInterestingPoints(std::vector<cv::Point3f> & points)
     for (int i=0; i<(int)divided_point_clouds.size(); ++i)
     {
       points.push_back(getWeightPoint(divided_point_clouds[i]));
-    }
+     }
 
 //}
 
@@ -227,7 +237,7 @@ void getInterestingPoints(std::vector<cv::Point3f> & points)
 
   delete registration;
 
-}
+} 
 
-}
+} 
 }
