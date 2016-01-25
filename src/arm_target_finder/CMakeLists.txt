@@ -144,13 +144,13 @@ set(SOURCE_FILES
     
 ## Declare a C++ executable
 add_executable(zhuangbi src/zhuangbi.cpp ${SOURCE_FILES})
-#add_executable(takephoto src/takephoto.cpp ${SOURCE_FILES})
+add_executable(takephoto src/takephoto.cpp ${SOURCE_FILES})
 add_executable(targetfinder src/TargetFinder.cpp ${SOURCE_FILES})
 
 ## Add cmake target dependencies of the executable
 ## same as for the library above
 add_dependencies(zhuangbi ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-#add_dependencies(takephoto ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_dependencies(takephoto ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 add_dependencies(targetfinder ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Specify libraries to link a library or executable target against
@@ -164,10 +164,10 @@ target_link_libraries(zhuangbi
     ${catkin_LIBRARIES}
 )
 
-#target_link_libraries(takephoto
-#    ${OpenCV_LIBS}
-#    ${catkin_LIBRARIES}
-#)
+target_link_libraries(takephoto
+    ${OpenCV_LIBS}
+    ${catkin_LIBRARIES}
+)
 
 #############
 ## Install ##

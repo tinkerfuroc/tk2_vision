@@ -12,6 +12,7 @@
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 #include <sensor_msgs/Image.h>
+#include <sensor_msgs/image_encodings.h>
 #include <geometry_msgs/PointStamped.h>
 #include <cv_bridge/cv_bridge.h>
 #include <image_transport/image_transport.h>
@@ -27,39 +28,39 @@ tinker::vision::ForegroundDetector fd(8, 0.265, 0.73);
 ros::Publisher pub;
 using std::string;
 
-static const int ImageTypeNum = 6;
+static const int ImageTypeNum = 4;
 static const char *ImageTypeName[] = 
 {
     //"dianchi", 
-    "bitong",
-    "akarrin",
-    "alps",
+    //"coffee",
+    //"akarrin",
+    "c3h6",
     "apple",
-    "bingtangxueli",
-    "pingzi",
+    "cola",
+    "tieguanyin",
     //"tsinghua",
 };
 static const cv::Scalar ImageTypeRectColor[] = 
 {
     //cv::Scalar(0, 0, 255), 
-    cv::Scalar(0, 255, 0), 
+    //cv::Scalar(0, 255, 0), 
     cv::Scalar(255, 0, 0), 
     cv::Scalar(255, 255, 0), 
     cv::Scalar(0, 255, 255),
     cv::Scalar(255, 0, 255),
-    cv::Scalar(0, 0, 0), 
+    //cv::Scalar(0, 0, 0), 
     //cv::Scalar(255, 255, 255), 
 };
 
 static const int ImageTypePhotonum[] = 
 {
     //4,
-    7,
-    4,
-    3,
+    //5,
+    6,
     2,
-    4,
-    2,
+    8,
+    6,
+    //2,
     //3,
 };
 
@@ -82,7 +83,7 @@ int InitObjs()
     {
         for (int j=0; j<ImageTypePhotonum[i]; j++)
         {
-            sprintf(imagefilename, "%s%d.png", ImageTypeName[i], j+1);
+            sprintf(imagefilename, "/home/furoc/tinker/data/%s%d.png", ImageTypeName[i], j+1);
             sprintf(imagename, "%s%d", ImageTypeName[i], j+1);
             cv::Mat frame = cv::imread(imagefilename, CV_LOAD_IMAGE_COLOR);
             if(!frame.data)                              // Check for invalid input
