@@ -17,7 +17,6 @@ bool getPoints(kinect_interesting_points::InterestingPoints::Request  &req,
 	  res.y.push_back(points[i].y);
 	  res.z.push_back(points[i].z);
   }
-
   return true;
 }
 
@@ -28,8 +27,8 @@ int main(int argc, char **argv)
 
   ros::ServiceServer service = n.advertiseService("kinect_interesting_points", getPoints);
   ROS_INFO("Ready to return info...");
-  ros::spin();
-
+  while(ros::ok())
+      ros::spin();
   return 0;
 }
 

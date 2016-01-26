@@ -82,15 +82,11 @@ namespace vision
                 if (entropy_mat.at<double>(i, j) < threshold)
                 {
                     depth_mat.at<float>(i, j) = 0;
-#ifdef __DEBUG__
                     image_mat.at<cv::Vec3b>(i, j) = cv::Vec3b(255, 255, 255);
-#endif
                 }
             }
         }
-#ifdef __DEBUG__
-//        cv::imwrite("filtered.png", image_mat);
-#endif
+        //cv::imwrite("filtered.png", image_mat);
     }
 
     void EntropyFilter::BuildEntropyTable()
