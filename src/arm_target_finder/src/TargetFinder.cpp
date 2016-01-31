@@ -34,10 +34,8 @@ static const char *ImageTypeName[] =
     //"dianchi", 
     //"coffee",
     //"akarrin",
-    "c3h6",
-    "apple",
     "cola",
-    "tieguanyin",
+    "bottle"
     //"tsinghua",
 };
 static const cv::Scalar ImageTypeRectColor[] = 
@@ -56,10 +54,8 @@ static const int ImageTypePhotonum[] =
 {
     //4,
     //5,
-    6,
-    2,
     8,
-    6,
+    5,
     //2,
     //3,
 };
