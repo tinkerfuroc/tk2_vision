@@ -50,7 +50,7 @@ namespace vision
             pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_cluster (new pcl::PointCloud<pcl::PointXYZRGB>);
             for (std::vector<int>::const_iterator pit = it->indices.begin (); pit != it->indices.end (); ++pit)
             cloud_cluster->points.push_back (cloud_filtered->points[*pit]);
-            cloud_cluster->width = cloud_cluster->points.size ();
+            cloud_cluster->width = cloud_cluster->points.size();
             cloud_cluster->height = 1;
             cloud_cluster->is_dense = true;
             divided_clouds.push_back(cloud_cluster);

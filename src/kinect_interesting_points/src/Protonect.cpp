@@ -54,6 +54,7 @@
 #include "pcl_rebuild/EntropyFilter.h"
 #include "pcl_rebuild/ColorChecker.h"
 #include "pcl_rebuild/ImageRebuild.h"
+#include <pcl/io/pcd_io.h>
 
 #include "pcl_rebuild/Protonect.h"
 
@@ -110,18 +111,16 @@ static void delay_ms(int time_ms)
 
 static cv::Point3f getWeightPoint(PointCloudPtr cloud)
 {
-  float sX=0, sY=0, sZ=0;
-  int size= cloud->width*cloud->height;
+  float sx=0, sy=0, sz=0;
+  int size= (cloud->width) * (cloud->height);
 
   for (int i=0; i<size; ++i)
   {
     pcl::PointXYZRGB point = cloud->points[i];
-    sX+=point.x; sY+=point.y; sZ+=point.z;
+    sx+=point.x; sy+=point.y; sz+=point.z;
   }
 
-  
-  return cv::Point3f(sX/size, sY/size, sZ/size);
-  
+  return cv::Point3f(sx/size, sy/size, sz/size);
 }
 
 //int main(int argc, char *argv[])
@@ -129,113 +128,99 @@ void getInterestingPoints(std::vector<cv::Point3f> & points)
 { 
 
   // create a console logger with debug level (default is console logger with info level)
-  libfreenect2::setGlobalLogger(libfreenect2::createConsoleLogger(libfreenect2::Logger::Debug));
+    libfreenect2::setGlobalLogger(libfreenect2::createConsoleLogger(libfreenect2::Logger::Debug));
 
-  MyFileLogger *filelogger = new MyFileLogger(getenv("LOGFILE"));
-  if (filelogger->good())
+    MyFileLogger *filelogger = new MyFileLogger(getenv("LOGFILE"));
+    if (filelogger->good())
     libfreenect2::setGlobalLogger(filelogger);
 
-  libfreenect2::Freenect2 freenect2;
-  libfreenect2::Freenect2Device *dev = 0;
-  libfreenect2::PacketPipeline *pipeline = 0;
+    libfreenect2::Freenect2 freenect2;
+    libfreenect2::Freenect2Device *dev = 0;
+    libfreenect2::PacketPipeline *pipeline = 0;
 
-  if(freenect2.enumerateDevices() == 0)
-   {
-    std::cout << "no device connected!" << std::endl;
-    return ;
-  }
-  std::string serial = freenect2.getDefaultDeviceSerialNumber();
+    if(freenect2.enumerateDevices() == 0)
+    {
+        std::cout << "no device connected!" << std::endl;
+        return ;
+    }
+    std::string serial = freenect2.getDefaultDeviceSerialNumber();
 
 
     dev = freenect2.openDevice(serial);
 
-  if(dev == 0)
-   {
-    std::cout << "failure opening device!" << std::endl;
-    return ;
-  }
+    if(dev == 0)
+    {
+        std::cout << "failure opening device!" << std::endl;
+        return ;
+    }
 
-  signal(SIGINT,sigint_handler);
-  protonect_shutdown = false;
+    signal(SIGINT,sigint_handler);
+    protonect_shutdown = false;
 
-// listeners
-  libfreenect2::SyncMultiFrameListener listener(libfreenect2::Frame::Color | libfreenect2::Frame::Ir | libfreenect2::Frame::Depth);
-  libfreenect2::FrameMap frames;
+    // listeners
+    libfreenect2::SyncMultiFrameListener listener(libfreenect2::Frame::Color | libfreenect2::Frame::Ir | libfreenect2::Frame::Depth);
+    libfreenect2::FrameMap frames;
 
-  dev->setColorFrameListener(&listener);
-  dev->setIrAndDepthFrameListener(&listener);
+    dev->setColorFrameListener(&listener);
+    dev->setIrAndDepthFrameListener(&listener);
 
-// start
-  dev->start();
+    // start
+    dev->start();
 
-  std::cout << "device serial: " << dev->getSerialNumber() << std::endl;
-  std::cout << "device firmware: " << dev->getFirmwareVersion() << std::endl;
+    std::cout << "device serial: " << dev->getSerialNumber() << std::endl;
+    std::cout << "device firmware: " << dev->getFirmwareVersion() << std::endl;
 
-// registration setup
-  libfreenect2::Registration* registration = new libfreenect2::Registration(dev->getIrCameraParams(), dev->getColorCameraParams());
-  libfreenect2::Frame undistorted(512, 424, 4), registered(512, 424, 4);
+    // registration setup
+    libfreenect2::Registration* registration = new libfreenect2::Registration(
+            dev->getIrCameraParams(), 
+            dev->getColorCameraParams());
+    libfreenect2::Frame undistorted(512, 424, 4), registered(512, 424, 4);
 
-//---------------------------------------------------------------
-  int framecount=0; 
-
-// loop start  
-  
-//while(!protonect_shutdown)
-//{
+    //---------------------------------------------------------------
+    libfreenect2::Frame *rgb, *ir, *depth;
     
     listener.waitForNewFrame(frames);
-    libfreenect2::Frame *rgb = frames[libfreenect2::Frame::Color];
-    libfreenect2::Frame *ir = frames[libfreenect2::Frame::Ir];
-    libfreenect2::Frame *depth = frames[libfreenect2::Frame::Depth];
+    rgb = frames[libfreenect2::Frame::Color];
+    ir = frames[libfreenect2::Frame::Ir];
+    depth = frames[libfreenect2::Frame::Depth];
 
-// registration
+    // registration
     registration->apply(rgb, depth, &undistorted, &registered);
-        
-    framecount++;
-    std::cout<<"["<<framecount<<"]"<<std::endl;
+            
 
     cv::Mat depthMatrix(depth->height, depth->width, CV_32FC1, depth->data);
     depthMatrix /= 4500.0f;
-    cv::Mat rgbMatrix(rgb->height, rgb->width , CV_8UC4, rgb->data);    
-    cv::Mat display(720, 1280, CV_8UC3);
-    cv::resize(rgbMatrix, display, display.size());
-
-
     cv::Mat registeredMatrix(registered.height, registered.width, CV_8UC4, registered.data);
+    cv::cvtColor(registeredMatrix, registeredMatrix, CV_BGRA2BGR);
 
     LineFilter line_filter;
     line_filter.Filter(depthMatrix, registeredMatrix);
     EntropyFilter entropy_filter(5, 0.4);
     entropy_filter.Filter(depthMatrix, registeredMatrix);
+    //cv::imwrite("reigistered.png", registeredMatrix);
       
-    PointCloudBuilder * builder = new PointCloudBuilder(depthMatrix, registeredMatrix);
-    PointCloudPtr pointCloud = builder->GetPointCloud();
-
-	pcl::PassThrough<pcl::PointXYZRGB> pass;
-	pass.setInputCloud(pointCloud);
-	pass.setFilterFieldName("z");
-	pass.setFilterLimits(0,200);
-	PointCloudPtr nearCloud(new pcl::PointCloud<pcl::PointXYZRGB>); 
-	pass.filter(*nearCloud);
-
-    IPointCloudDivider * divider = new ClusterDivider(nearCloud);
-    std::vector<PointCloudPtr> divided_point_clouds = divider->GetDividedPointClouds();
+    PointCloudBuilder builder(depthMatrix, registeredMatrix);
+    PointCloudPtr pointCloud = builder.GetPointCloud();
+    //pcl::io::savePCDFile("original.pcd", *pointCloud);
+    ClusterDivider divider(pointCloud);
+    std::vector<PointCloudPtr> divided_point_clouds = divider.GetDividedPointClouds();
 
     listener.release(frames);
   
     points.clear();
     for (int i=0; i<(int)divided_point_clouds.size(); ++i)
     {
-      points.push_back(getWeightPoint(divided_point_clouds[i]));
-     }
+        char buf[100];
+        sprintf(buf, "%d.pcd", i);
+        pcl::io::savePCDFile(buf, *divided_point_clouds[i]);
+        points.push_back(getWeightPoint(divided_point_clouds[i]));
+    }
 
-//}
 
-// stop
-  dev->stop();
-  dev->close();
+    dev->stop();
+    dev->close();
 
-  delete registration;
+    delete registration;
 
 } 
 

@@ -1,75 +1,19 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(kinect_interesting_points)
-
-find_package(OpenCV REQUIRED)
-find_package(PCL 1.7 REQUIRED)
-find_package(freenect2 REQUIRED) ## Make sure you've install libfreenect2
+project(arm_target_finder)
 
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
+
+FIND_PACKAGE(OpenCV REQUIRED)
+
 find_package(catkin REQUIRED COMPONENTS
-  pcl_conversions
-  pcl_ros
+  cv_bridge
+  image_transport
   roscpp
   sensor_msgs
   message_generation
 )
-
-## find libusb
-if (LIBUSB_1_LIBRARIES AND LIBUSB_1_INCLUDE_DIRS)
-  # in cache already
-  set(LIBUSB_FOUND TRUE)
-else (LIBUSB_1_LIBRARIES AND LIBUSB_1_INCLUDE_DIRS)
-  find_path(LIBUSB_1_INCLUDE_DIR
-    NAMES
-	libusb-1.0/libusb.h
-    PATHS
-      /usr/include
-      /usr/local/include
-      /opt/local/include
-      /sw/include
-	PATH_SUFFIXES
-	  libusb-1.0
-  )
-
-  find_library(LIBUSB_1_LIBRARY
-    NAMES
-      usb-1.0
-    PATHS
-      /usr/lib
-      /usr/local/lib
-      /opt/local/lib
-      /sw/lib
-  )
-
-  set(LIBUSB_1_INCLUDE_DIRS
-    ${LIBUSB_1_INCLUDE_DIR}
-  )
-  set(LIBUSB_1_LIBRARIES
-    ${LIBUSB_1_LIBRARY}
-)
-
-  if (LIBUSB_1_INCLUDE_DIRS AND LIBUSB_1_LIBRARIES)
-     set(LIBUSB_1_FOUND TRUE)
-  endif (LIBUSB_1_INCLUDE_DIRS AND LIBUSB_1_LIBRARIES)
-
-  if (LIBUSB_1_FOUND)
-    if (NOT libusb_1_FIND_QUIETLY)
-      message(STATUS "Found libusb-1.0:")
-	  message(STATUS " - Includes: ${LIBUSB_1_INCLUDE_DIRS}")
-	  message(STATUS " - Libraries: ${LIBUSB_1_LIBRARIES}")
-    endif (NOT libusb_1_FIND_QUIETLY)
-  else (LIBUSB_1_FOUND)
-    if (libusb_1_FIND_REQUIRED)
-      message(FATAL_ERROR "Could not find libusb")
-    endif (libusb_1_FIND_REQUIRED)
-  endif (LIBUSB_1_FOUND)
-
-  # show the LIBUSB_1_INCLUDE_DIRS and LIBUSB_1_LIBRARIES variables only in the advanced view
-  mark_as_advanced(LIBUSB_1_INCLUDE_DIRS LIBUSB_1_LIBRARIES)
-
-endif (LIBUSB_1_LIBRARIES AND LIBUSB_1_INCLUDE_DIRS)
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
@@ -105,19 +49,17 @@ endif (LIBUSB_1_LIBRARIES AND LIBUSB_1_INCLUDE_DIRS)
 ##   * add every package in MSG_DEP_SET to generate_messages(DEPENDENCIES ...)
 
 ## Generate messages in the 'msg' folder
-# add_message_files(
-#   FILES
-#   Message1.msg
-#   Message2.msg
-# )
+add_message_files(
+  FILES
+  TargetFound.msg
+)
 
 ## Generate services in the 'srv' folder
- add_service_files(
-   FILES
-   InterestingPoints.srv
+# add_service_files(
+#   FILES
 #   Service1.srv
 #   Service2.srv
- )
+# )
 
 ## Generate actions in the 'action' folder
 # add_action_files(
@@ -127,10 +69,10 @@ endif (LIBUSB_1_LIBRARIES AND LIBUSB_1_INCLUDE_DIRS)
 # )
 
 ## Generate added messages and services with any dependencies listed here
- generate_messages(
-   DEPENDENCIES
-   sensor_msgs
- )
+generate_messages(
+  DEPENDENCIES
+  sensor_msgs
+)
 
 ################################################
 ## Declare ROS dynamic reconfigure parameters ##
@@ -163,8 +105,8 @@ endif (LIBUSB_1_LIBRARIES AND LIBUSB_1_INCLUDE_DIRS)
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
 #  INCLUDE_DIRS include
-#  LIBRARIES kinect_interesting_points
-  CATKIN_DEPENDS pcl_conversions pcl_ros roscpp sensor_msgs message_runtime
+#  LIBRARIES arm_target_finder
+   CATKIN_DEPENDS cv_bridge image_transport roscpp sensor_msgs message_runtime
 #  DEPENDS system_lib
 )
 
@@ -177,77 +119,55 @@ catkin_package(
 # include_directories(include)
 include_directories(
   ${catkin_INCLUDE_DIRS}
-  ${freenect2_INCLUDE_DIR}
   ${OpenCV_INCLUDE_DIRS}
-  ${PCL_INCLUDE_DIRS}
   ./include/
 )
 
-LINK_DIRECTORIES(
-  ${PCL_LIBRARY_DIRS}
-)
-
-ADD_DEFINITIONS(
-  ${PCL_DEFINITIONS}
-  )
-
-
 ## Declare a C++ library
-# add_library(kinect_interesting_points
-#   src/${PROJECT_NAME}/kinect_interesting_points.cpp
+# add_library(fuckcamcv
+#   src/${PROJECT_NAME}/fuckcamcv.cpp
 # )
 
 ## Add cmake target dependencies of the library
 ## as an example, code may need to be generated before libraries
 ## either from message generation or dynamic reconfigure
-# add_dependencies(kinect_interesting_points ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+# add_dependencies(fuckcamcv ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
+set(LIBRARIES
+    ${OPENCV_LIBS}
+    ${OPENCV_LIBRARIES}
+)
+
+set(SOURCE_FILES
+    src/ForegroundDetector.cpp
+)
+    
 ## Declare a C++ executable
-# add_executable(kinect_interesting_points_node src/kinect_interesting_points_node.cpp)
-
-add_executable(kinect_interesting_points_server 
-  src/kinect_interesting_points_server.cpp
-  src/Protonect.cpp
-  src/ClusterDivider.cpp
-  src/ColorChecker.cpp
-  src/ColorFixer.cpp
-  src/EntropyFilter.cpp
-  src/ImageRebuild.cpp
-  src/KinectParameters.cpp
-  src/LineFilter.cpp
-  src/PointCloudBuilder.cpp
-  src/PointCloudUtilities.cpp
-  )
-add_executable(kinect_interesting_points_client
-  src/kinect_interesting_points_client.cpp
-  )
-
-
+add_executable(zhuangbi src/zhuangbi.cpp ${SOURCE_FILES})
+add_executable(takephoto src/takephoto.cpp ${SOURCE_FILES})
+add_executable(targetfinder src/TargetFinder.cpp ${SOURCE_FILES})
 
 ## Add cmake target dependencies of the executable
 ## same as for the library above
-# add_dependencies(kinect_interesting_points_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-add_dependencies(kinect_interesting_points_server
-  kinect_interesting_points_gencpp
-  )
-add_dependencies(kinect_interesting_points_client
-  kinect_interesting_points_gencpp
-  )
+add_dependencies(zhuangbi ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_dependencies(takephoto ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_dependencies(targetfinder ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Specify libraries to link a library or executable target against
-# target_link_libraries(kinect_interesting_points_node
-#   ${catkin_LIBRARIES}
-# )
-target_link_libraries(kinect_interesting_points_server
-  ${catkin_LIBRARIES}
-  ${freenect2_LIBRARIES}
-  ${OpenCV_LIBS}
-  ${PCL_LIBRARIES}
-  ${LIBUSB_1_LIBRARIES}
-  )
-target_link_libraries(kinect_interesting_points_client
-  ${catkin_LIBRARIES}
-  )
+target_link_libraries(targetfinder
+    ${OpenCV_LIBS}
+    ${catkin_LIBRARIES}
+)
+
+target_link_libraries(zhuangbi
+    ${OpenCV_LIBS}
+    ${catkin_LIBRARIES}
+)
+
+target_link_libraries(takephoto
+    ${OpenCV_LIBS}
+    ${catkin_LIBRARIES}
+)
 
 #############
 ## Install ##
@@ -264,7 +184,7 @@ target_link_libraries(kinect_interesting_points_client
 # )
 
 ## Mark executables and/or libraries for installation
-# install(TARGETS kinect_interesting_points kinect_interesting_points_node
+# install(TARGETS arm_target_finder arm_target_finder_node
 #   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
 #   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
 #   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
@@ -289,7 +209,7 @@ target_link_libraries(kinect_interesting_points_client
 #############
 
 ## Add gtest based cpp test target and link libraries
-# catkin_add_gtest(${PROJECT_NAME}-test test/test_kinect_interesting_points.cpp)
+# catkin_add_gtest(${PROJECT_NAME}-test test/test_arm_target_finder.cpp)
 # if(TARGET ${PROJECT_NAME}-test)
 #   target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME})
 # endif()
