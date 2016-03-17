@@ -98,6 +98,8 @@ void PointCloudObjectFinder::TimerCallback(const ros::TimerEvent & event) {
 }
 
 vector<PointCloudPtr> PointCloudObjectFinder::GetObjectPointClouds() {
+    cv::pyrDown(depth_image_, depth_image_);
+    cv::pyrDown(rgb_image_, rgb_image_);
     FixColor(rgb_image_);
     cv::Mat line_mask = LineFilterMask(rgb_image_, 3.5);
     ApplyMask(line_mask, depth_image_, cv::Vec3s(0, 0, 0));
