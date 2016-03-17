@@ -1,8 +1,11 @@
 //main node for tk2.
-//catch tk2_com/arm_cam_image and find fucking objects out.
+//catch tk2_com/arm_cam_image and find objects out.
 //
 //input: camera image(sensor_msgs/Image)tk2_com/arm_cam_image
 //output:caught object(arm_target_finder/TargetFound) tk2_vision/arm_target_finder/caught_obj
+//parameter: 
+//  /objects/object_info_file
+//  /obje
 //
 //Du 2016.1.15.
 //

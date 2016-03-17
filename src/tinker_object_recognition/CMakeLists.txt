@@ -1,29 +1,20 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(arm_target_finder)
+project(tinker_object_recognition)
 
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
 
-FIND_LIBRARY(YAML_CPP_LIBRARY yaml-cpp
-    PATHS /usr/local/lib
-    NO_DEFAULT_PATH
-)
-SET(YAML_CPP_LIBRARIES ${YAML_CPP_LIBRARY})
-FIND_PATH(YAML_CPP_INCLUDE_DIR yaml-cpp/parser.h
-    PATHS /usr/local/include
-    NO_DEFAULT_PATH
-)
-SET(YAML_CPP_INCUDE_DIRS ${YAML_CPP_INCLUDE_DIR})
-
 FIND_PACKAGE(OpenCV REQUIRED)
+find_package(PCL 1.7 REQUIRED)
 
 find_package(catkin REQUIRED COMPONENTS
+  object_recognition_msgs
   cv_bridge
-  image_transport
-  roscpp
   sensor_msgs
-  message_generation
+  roscpp
+  rospy
+  tf
 )
 
 ## System dependencies are found with CMake's conventions
@@ -60,10 +51,11 @@ find_package(catkin REQUIRED COMPONENTS
 ##   * add every package in MSG_DEP_SET to generate_messages(DEPENDENCIES ...)
 
 ## Generate messages in the 'msg' folder
-add_message_files(
-  FILES
-  TargetFound.msg
-)
+# add_message_files(
+#   FILES
+#   Message1.msg
+#   Message2.msg
+# )
 
 ## Generate services in the 'srv' folder
 # add_service_files(
@@ -80,10 +72,10 @@ add_message_files(
 # )
 
 ## Generate added messages and services with any dependencies listed here
-generate_messages(
-  DEPENDENCIES
-  sensor_msgs
-)
+# generate_messages(
+#   DEPENDENCIES
+#   object_recognition_msgs
+# )
 
 ################################################
 ## Declare ROS dynamic reconfigure parameters ##
@@ -116,8 +108,8 @@ generate_messages(
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
 #  INCLUDE_DIRS include
-#  LIBRARIES arm_target_finder
-   CATKIN_DEPENDS cv_bridge image_transport roscpp sensor_msgs message_runtime
+#  LIBRARIES tinker_object_recognition
+   CATKIN_DEPENDS object_recognition_msgs roscpp rospy tf
 #  DEPENDS system_lib
 )
 
@@ -129,55 +121,54 @@ catkin_package(
 ## Your package locations should be listed before other locations
 # include_directories(include)
 include_directories(
-  ${catkin_INCLUDE_DIRS}
-  ${OpenCV_INCLUDE_DIRS}
-  ./include/
+    include
+    ${catkin_INCLUDE_DIRS}
+    ${OpenCV_INCLUDE_DIRS}
+    ${PCL_INCLUDE_DIRS}
+)
+
+LINK_DIRECTORIES(
+  ${PCL_LIBRARY_DIRS}
+)
+
+ADD_DEFINITIONS(
+  ${PCL_DEFINITIONS}
+)
+
+SET(SRC_FILE
+    src/graph_filter/ColorFixer.cpp
+    src/graph_filter/filters.cpp
+    src/pointcloud_rebuild/pointcloud_builder.cpp
+    src/pointcloud_recognition/ClusterDivider.cpp
+    src/pointcloud_recognition/pointcloud_object_finder.cpp
+    src/utilities.cpp
 )
 
 ## Declare a C++ library
-# add_library(fuckcamcv
-#   src/${PROJECT_NAME}/fuckcamcv.cpp
+# add_library(tinker_object_recognition
+#   src/${PROJECT_NAME}/tinker_object_recognition.cpp
 # )
 
 ## Add cmake target dependencies of the library
 ## as an example, code may need to be generated before libraries
 ## either from message generation or dynamic reconfigure
-# add_dependencies(fuckcamcv ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+# add_dependencies(tinker_object_recognition ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
-set(LIBRARIES
-    ${OPENCV_LIBS}
-    ${OPENCV_LIBRARIES}
-)
-
-set(SOURCE_FILES
-    src/ForegroundDetector.cpp
-)
-    
 ## Declare a C++ executable
-add_executable(zhuangbi src/zhuangbi.cpp ${SOURCE_FILES})
-add_executable(takephoto src/takephoto.cpp ${SOURCE_FILES})
-add_executable(targetfinder src/TargetFinder.cpp ${SOURCE_FILES})
+add_executable(tinker_pointcloud_recognition_node 
+    src/pointcloud_recognition/tinker_pointcloud_recognition_node.cpp
+    ${SRC_FILE}
+)
 
 ## Add cmake target dependencies of the executable
 ## same as for the library above
-add_dependencies(zhuangbi ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-add_dependencies(takephoto ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-add_dependencies(targetfinder ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+# add_dependencies(tinker_object_recognition_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Specify libraries to link a library or executable target against
-target_link_libraries(targetfinder
-    ${OpenCV_LIBS}
+target_link_libraries(tinker_pointcloud_recognition_node
     ${catkin_LIBRARIES}
-)
-
-target_link_libraries(zhuangbi
     ${OpenCV_LIBS}
-    ${catkin_LIBRARIES}
-)
-
-target_link_libraries(takephoto
-    ${OpenCV_LIBS}
-    ${catkin_LIBRARIES}
+    ${PCL_LIBRARIES}
 )
 
 #############
@@ -195,7 +186,7 @@ target_link_libraries(takephoto
 # )
 
 ## Mark executables and/or libraries for installation
-# install(TARGETS arm_target_finder arm_target_finder_node
+# install(TARGETS tinker_object_recognition tinker_object_recognition_node
 #   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
 #   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
 #   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
@@ -220,7 +211,7 @@ target_link_libraries(takephoto
 #############
 
 ## Add gtest based cpp test target and link libraries
-# catkin_add_gtest(${PROJECT_NAME}-test test/test_arm_target_finder.cpp)
+# catkin_add_gtest(${PROJECT_NAME}-test test/test_tinker_object_recognition.cpp)
 # if(TARGET ${PROJECT_NAME}-test)
 #   target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME})
 # endif()

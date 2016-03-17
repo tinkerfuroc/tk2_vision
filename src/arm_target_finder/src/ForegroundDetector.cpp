@@ -31,7 +31,6 @@ namespace tinker
             }
         }
         
-        
         void ForegroundDetector::DilateImage(cv::Mat & mat, int kernel_size)
         {
             cv::Mat kernel = cv::getStructuringElement(cv::MORPH_ELLIPSE,
