@@ -151,34 +151,31 @@ set(LIBRARIES
 
 set(SOURCE_FILES
     src/ForegroundDetector.cpp
+    src/tinyxml2.cpp
+    src/SparseRecognition.cpp
 )
     
 ## Declare a C++ executable
 add_executable(zhuangbi src/zhuangbi.cpp ${SOURCE_FILES})
-add_executable(takephoto src/takephoto.cpp ${SOURCE_FILES})
+add_executable(collectsample src/collectsample.cpp ${SOURCE_FILES})
 add_executable(targetfinder src/TargetFinder.cpp ${SOURCE_FILES})
+add_executable(modelbuild src/ModelBuild.cpp ${SOURCE_FILES})
+add_executable(objectclassify src/ObjectClassify.cpp ${SOURCE_FILES})
 
 ## Add cmake target dependencies of the executable
 ## same as for the library above
 add_dependencies(zhuangbi ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-add_dependencies(takephoto ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_dependencies(collectsample ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 add_dependencies(targetfinder ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_dependencies(modelbuild ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_dependencies(objectclassify ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Specify libraries to link a library or executable target against
-target_link_libraries(targetfinder
-    ${OpenCV_LIBS}
-    ${catkin_LIBRARIES}
-)
-
-target_link_libraries(zhuangbi
-    ${OpenCV_LIBS}
-    ${catkin_LIBRARIES}
-)
-
-target_link_libraries(takephoto
-    ${OpenCV_LIBS}
-    ${catkin_LIBRARIES}
-)
+target_link_libraries(zhuangbi ${OpenCV_LIBS} ${catkin_LIBRARIES})
+target_link_libraries(collectsample ${OpenCV_LIBS} ${catkin_LIBRARIES})
+target_link_libraries(targetfinder ${OpenCV_LIBS} ${catkin_LIBRARIES})
+target_link_libraries(modelbuild ${OpenCV_LIBS} ${catkin_LIBRARIES})
+target_link_libraries(objectclassify ${OpenCV_LIBS} ${catkin_LIBRARIES})
 
 #############
 ## Install ##

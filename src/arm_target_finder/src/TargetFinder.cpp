@@ -27,11 +27,15 @@
 
 void ArmCamImgCallback(const sensor_msgs::Image::ConstPtr& msg);
 
-tinker::vision::ForegroundDetector fd(8, 0.265, 0.73);
+tinker::vision::ForegroundDetector fd(8, 0.265, 0.7);
 ros::Publisher pub;
 using std::string;
 
+<<<<<<< HEAD
 static const int ImageTypeNum = 4;
+=======
+static const int ImageTypeNum = 7;
+>>>>>>> feature_arm_target_finder
 static const char *ImageTypeName[] = 
 {
     //"dianchi", 
@@ -40,6 +44,7 @@ static const char *ImageTypeName[] =
     "cola",
     "bottle"
     //"tsinghua",
+    "xiaololi",
 };
 static const cv::Scalar ImageTypeRectColor[] = 
 {
@@ -51,6 +56,7 @@ static const cv::Scalar ImageTypeRectColor[] =
     cv::Scalar(255, 0, 255),
     //cv::Scalar(0, 0, 0), 
     //cv::Scalar(255, 255, 255), 
+    cv::Scalar(255, 255, 255), 
 };
 
 static const int ImageTypePhotonum[] = 
@@ -61,6 +67,7 @@ static const int ImageTypePhotonum[] =
     5,
     //2,
     //3,
+    1,
 };
 
 tinker::vision::ZhuangBiObjectInfo **objs;
