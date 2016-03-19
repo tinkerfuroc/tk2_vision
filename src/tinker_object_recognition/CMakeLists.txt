@@ -171,8 +171,8 @@ add_executable(tinker_pointcloud_recognition_node
     ${SRC_FILE}
 )
 
-add_executable(arm_target_find_node 
-    src/arm_target_find/ObjectClassify.cpp
+add_executable(arm_target_finder_node 
+    src/arm_target_finder/ObjectClassify.cpp
     ${SRC_FILE}
 )
 
@@ -187,9 +187,10 @@ target_link_libraries(tinker_pointcloud_recognition_node
     ${PCL_LIBRARIES}
 )
 
-add_executable(arm_target_find_node 
+target_link_libraries(arm_target_finder_node 
     ${catkin_LIBRARIES}
     ${OpenCV_LIBS}
+    ${PCL_LIBRARIES}
 )
 
 

@@ -36,7 +36,7 @@
 */
 
 
-#include "fastcluster.h"
+#include "tinker_object_recognition/CMT/fastcluster.h"
 
 class doubly_linked_list {
   /*

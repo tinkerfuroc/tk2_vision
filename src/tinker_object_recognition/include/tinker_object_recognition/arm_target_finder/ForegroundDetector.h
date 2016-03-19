@@ -20,7 +20,7 @@ namespace tinker
         class ForegroundDetector
         {
         public:
-            ForegroundDetector::ForegroundDetector(int filter_size, double entropy_threshold)
+            ForegroundDetector(int filter_size, double entropy_threshold)
                 : filter_size_(filter_size), entropy_threshold_(entropy_threshold) {}
             void Filter(const cv::Mat & source_mat, cv::Mat & desk_mat);
             cv::Mat TakePhoto(const cv::Mat & source_mat);

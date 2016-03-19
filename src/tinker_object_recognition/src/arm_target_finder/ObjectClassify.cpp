@@ -16,7 +16,7 @@
 using std::string;
 
 void ArmCamImgCallback(const sensor_msgs::Image::ConstPtr& msg);
-tinker::vision::ForegroundDetector fd(8, 0.265, 0);
+tinker::vision::ForegroundDetector fd(8, 0.265);
 int Usage();
 
 
