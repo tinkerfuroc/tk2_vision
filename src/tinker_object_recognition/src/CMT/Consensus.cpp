@@ -1,9 +1,9 @@
-#include "Consensus.h"
+#include "tinker_object_recognition/CMT/Consensus.h"
 
 #define _USE_MATH_DEFINES //Necessary for M_PI to be available on Windows
 #include <cmath>
 
-#include "fastcluster/fastcluster.h"
+#include "tinker_object_recognition/CMT/fastcluster.h"
 
 using std::max_element;
 using std::distance;

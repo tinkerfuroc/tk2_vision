@@ -2,7 +2,7 @@
 
 #define CONSENSUS_H
 
-#include "common.h"
+#include "tinker_object_recognition/CMT/common.h"
 
 namespace cmt {
 

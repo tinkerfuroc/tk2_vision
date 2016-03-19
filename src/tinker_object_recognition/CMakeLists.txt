@@ -141,7 +141,18 @@ SET(SRC_FILE
     src/pointcloud_rebuild/pointcloud_builder.cpp
     src/pointcloud_recognition/ClusterDivider.cpp
     src/pointcloud_recognition/pointcloud_object_finder.cpp
+    src/CMT/CMT.cpp
+    src/CMT/common.cpp
+    src/CMT/Consensus.cpp
+    src/CMT/fastcluster.cpp
+    src/CMT/Fusion.cpp
+    src/CMT/Matcher.cpp
+    src/CMT/Tracker.cpp
+    src/SRC_model/SparseRecognition.cpp
+    src/arm_target_finder/ForegroundDetector.cpp
     src/utilities.cpp
+    src/tinyxml2.cpp
+    
 )
 
 ## Declare a C++ library
@@ -160,6 +171,11 @@ add_executable(tinker_pointcloud_recognition_node
     ${SRC_FILE}
 )
 
+add_executable(arm_target_find_node 
+    src/arm_target_find/ObjectClassify.cpp
+    ${SRC_FILE}
+)
+
 ## Add cmake target dependencies of the executable
 ## same as for the library above
 # add_dependencies(tinker_object_recognition_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
@@ -170,6 +186,12 @@ target_link_libraries(tinker_pointcloud_recognition_node
     ${OpenCV_LIBS}
     ${PCL_LIBRARIES}
 )
+
+add_executable(arm_target_find_node 
+    ${catkin_LIBRARIES}
+    ${OpenCV_LIBS}
+)
+
 
 #############
 ## Install ##

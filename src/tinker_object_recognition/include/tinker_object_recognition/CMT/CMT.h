@@ -2,11 +2,11 @@
 
 #define CMT_H
 
-#include "common.h"
-#include "Consensus.h"
-#include "Fusion.h"
-#include "Matcher.h"
-#include "Tracker.h"
+#include "tinker_object_recognition/CMT/common.h"
+#include "tinker_object_recognition/CMT/Consensus.h"
+#include "tinker_object_recognition/CMT/Fusion.h"
+#include "tinker_object_recognition/CMT/Matcher.h"
+#include "tinker_object_recognition/CMT/Tracker.h"
 
 #include <opencv2/features2d/features2d.hpp>
 

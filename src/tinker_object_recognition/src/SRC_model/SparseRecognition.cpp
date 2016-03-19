@@ -1,5 +1,5 @@
-#include <arm_target_finder/SparseRecognition.h>
-#include <arm_target_finder/blas_wrappers.h>
+#include <tinker_object_recognition/SRC_model/SparseRecognition.h>
+#include <tinker_object_recognition/SRC_model/blas_wrappers.h>
 #include <opencv2/core/core_c.h>
 #include <opencv2/highgui/highgui_c.h>
 #include <opencv2/imgproc/imgproc_c.h>

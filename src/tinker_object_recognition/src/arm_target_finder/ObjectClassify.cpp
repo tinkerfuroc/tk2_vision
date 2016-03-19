@@ -1,8 +1,8 @@
 #include <cstdio>
 #include <cstdlib>
 #include <string>
-#include <arm_target_finder/SparseRecognition.h>
-#include <arm_target_finder/ForegroundDetector.h>
+#include <tinker_object_recognition/SRC_model/SparseRecognition.h>
+#include <tinker_object_recognition/arm_target_finder/ForegroundDetector.h>
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 #include <sensor_msgs/Image.h>

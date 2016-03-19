@@ -1,4 +1,4 @@
-#include <arm_target_finder/SparseRecognition.h>
+#include <tinker_object_recognition/SRC_model/SparseRecognition.h>
 #include <cstdio>
 #include <cstdlib>
 #include <string>
