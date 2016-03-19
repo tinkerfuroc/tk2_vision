@@ -1,5 +1,6 @@
 #include <tinker_object_recognition/graph_filter/filters.h>
 #include <cmath>
+#include <ros/ros.h>
 
 namespace tinker {
 namespace vision {
@@ -15,8 +16,7 @@ cv::Mat EntropyFilterMask(const cv::Mat & image, float threshold, int filter_siz
     cv::Mat mask(image.rows, image.cols, CV_8UC1);
     //build the entropy image
     cv::Mat entropy_mat(image.rows, image.cols, CV_32FC1);
-    cv::Mat gray_scale_image;
-    cv::cvtColor(image, gray_scale_image, CV_BGR2GRAY);
+    const cv::Mat & gray_scale_image = image;
     int gray_levels = filter_size * filter_size;
     int mov_start = filter_size / 2;
     int *gray_scale = new int[gray_levels];//buffer
@@ -53,13 +53,16 @@ cv::Mat EntropyFilterMask(const cv::Mat & image, float threshold, int filter_siz
     //filter the image
     for (int i = 0; i < entropy_mat.rows; i++)
         for (int j = 0; j < entropy_mat.cols; j++) {
-            mask.at<unsigned char>(i, j) = !(entropy_mat.at<float>(i, j) < threshold);
+            if (entropy_mat.at<float>(i, j) < threshold)
+                mask.at<unsigned char>(i, j) = 0;
+            else
+                mask.at<unsigned char>(i, j) = 255;
         }
     return mask;
 }
 
 vector<float> BuildEntropyTable(int filter_size) {
-    vector<float> entropy_table(filter_size*filter_size);
+    vector<float> entropy_table(filter_size*filter_size + 1);
     entropy_table[0] = 0;
     int gray_levels = filter_size * filter_size;
     for (int i = 1; i <= filter_size * filter_size; i++) {
@@ -160,7 +163,7 @@ cv::Mat LineFilterMask(const cv::Mat & image, double linewidth) {
     cv::Mat mask(image.rows, image.cols, CV_8UC1);
     for(int i = 0; i < mask.rows; i++) {
         for(int j = 0; j < mask.cols; j++) {
-            mask.at<unsigned char>(i, j) = 1;
+            mask.at<unsigned char>(i, j) = 255;
         }
     }
     int downsampleStep = 4;
@@ -173,10 +176,10 @@ cv::Mat LineFilterMask(const cv::Mat & image, double linewidth) {
     float width = downsampleStep * linewidth;
     for (size_t i = 0; i < lines.size(); i++) {
         cv::Vec4i l = lines[i];
-        l[0]*=downsampleStep; 
-        l[1]*=downsampleStep; 
-        l[2]*=downsampleStep; 
-        l[3]*=downsampleStep;
+        l[0] *= downsampleStep; 
+        l[1] *= downsampleStep; 
+        l[2] *= downsampleStep; 
+        l[3] *= downsampleStep;
         cv::line(mask, cv::Point(l[0], l[1]), cv::Point(l[2], l[3]), 0, width, 4);
     } 
     return mask;

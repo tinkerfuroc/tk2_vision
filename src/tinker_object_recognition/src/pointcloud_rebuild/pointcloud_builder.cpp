@@ -30,14 +30,14 @@ PointCloudPtr BuildPointCloud(const cv::Mat & depthImage, const cv::Mat & rgbIma
             newPoint.g = rgbImage.at<cv::Vec3b>(y, x)[1];
             newPoint.r = rgbImage.at<cv::Vec3b>(y, x)[2];
             newPoint.x = ((float)location[0]) / 1000.;
-            newPoint.y = ((float) location[1]) / 1000. ;
-            newPoint.z = ((float) location[2]) / 1000. ;
+            newPoint.y = ((float) location[1]) / 1000.;
+            newPoint.z = ((float) location[2]) / 1000.;
             pointCloud->points.push_back(newPoint);
         }
     }
     pointCloud->width = (int) pointCloud->points.size();
     pointCloud->height = 1;
-    cout << "Build success" << endl;
+    return pointCloud;
 }
 
 }
