@@ -23,7 +23,6 @@ int Usage();
 const char *filename = "fuck.png";
 string model_filename;
 SRCModel *src_model;
-const double threshold = 0;
 
 
 int main(int argc, char * argv[])
@@ -61,6 +60,8 @@ void ArmCamImgCallback(const sensor_msgs::Image::ConstPtr& msg)
     compression_params.push_back(9);   
     imwrite(filename, res_mat, compression_params);
     CvMat *y = LoadSample(filename, src_model->sample_size_);
-    string name = Recognize(src_model, y, threshold, NULL, NULL);
-    printf(", and the name of the subject is %s\n", name.c_str());
+    string name;
+    double sci;
+    Recognize(src_model, y, 0.2, sci, name, NULL, NULL);
+    printf("sci: %f, name: %s\n", sci, name.c_str());
 }

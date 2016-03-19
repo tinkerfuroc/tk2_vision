@@ -97,15 +97,22 @@ double SCI(
 	size_t n_subject_samples
 );
 
+struct id_sci_struct
+{
+    int id;
+    double sci;
+};
+
 // get identity of y
 // -1 returned if not found, else 0, 1, ..., k-1
-int Identity(
+void Identity(
 	const CvMat *A, // train samples
 	const CvMat *x, // 
 	const CvMat *y, // test sample
 	double sci_t, // if SCI(x)<sci_t, return -1
 	size_t n_subject_samples,
-	vector<double> *r= NULL
+	id_sci_struct *iss,
+	vector<double> *rv= NULL
 );
 
 // get subject ID from subject filename
@@ -162,12 +169,15 @@ SRCModel* TrainSRCModel(
 );
 
 // recognize test sample
-string Recognize(
+void Recognize(
 	const SRCModel *model, // SRC model
 	const CvMat *y, // test sample
 	double sci_t, // if SCI(x)<sci_t, return "Unknown"
+	double &out_sci,
+	string &out_name,
 	const char *x_file= NULL, // if x saved, not NULL
 	const char *r_file= NULL // if residuals r saved, not NULL
+	
 ); 
 
 

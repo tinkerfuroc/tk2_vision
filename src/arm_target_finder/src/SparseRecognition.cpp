@@ -330,17 +330,18 @@ double SCI(
 
 // get identity of y
 // -1 returned if not found, else 0, 1, ..., k-1
-int Identity(
+void Identity(
 	const CvMat *A, // train samples
 	const CvMat *x, // 
 	const CvMat *y, // test sample
 	double sci_t, // if SCI(x)<sci_t, return -1
 	size_t n_subject_samples,
+	id_sci_struct *iss,
 	vector<double> *rv
 ) {
 	double sci= SCI(x,n_subject_samples);
-	printf("the sparsity concentration index is %f ", sci);
-	if(sci<sci_t) { return -1; }
+	iss->sci = sci;
+	if(sci<sci_t) { iss->id = -1; return; }
 
 	if(rv) { rv->clear(); }
 
@@ -358,7 +359,8 @@ int Identity(
 		}
 	}
 	cvReleaseMat(&delta_i_x);
-	return id;
+	iss->id = id;
+	return;
 }
 
 /*
@@ -431,10 +433,12 @@ SRCModel* TrainSRCModel(
 }
 
 // recognize test sample
-string Recognize(
+void Recognize(
 	const SRCModel *model, // SRC model
 	const CvMat *y, // test sample
 	double sci_t, // if SCI(x)<sci_t, return "Unknown"
+	double &out_sci,
+	string &out_name,
 	const char *x_file, // if x saved, not NULL
 	const char *r_file // if residuals r saved, not NULL
 ) {
@@ -446,7 +450,8 @@ string Recognize(
 	vector<double> r;
 	FastDALM(x->data.db, iters, y->data.db, model->A_->data.db, lambda, tol, max_iters, 
 			model->A_->cols, model->A_->rows, ALMSTOPPING_INCREMENTS, NULL, false);
-	int id= Identity(model->A_, x, y, sci_t, model->n_subject_samples_, &r);
+	id_sci_struct iss;
+	Identity(model->A_, x, y, sci_t, model->n_subject_samples_, &iss, &r);
 
 	if(x_file) {
 		ofstream xfout(x_file);
@@ -461,11 +466,16 @@ string Recognize(
 	}
 
 	cvReleaseMat(&x);
+    
+    out_sci = iss.sci;
 
-	if(id==-1) { 
-		return "Unknown";
+	if(iss.id == -1) { 
+		out_name = "";
 	}
-	return model->subject_names_[id];
+	else
+	{
+	    out_name = model->subject_names_[iss.id];
+	}
 }
 string toString(int n)
 {
