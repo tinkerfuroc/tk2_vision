@@ -10,6 +10,7 @@ find_package(PCL 1.7 REQUIRED)
 
 find_package(catkin REQUIRED COMPONENTS
   object_recognition_msgs
+  image_transport
   cv_bridge
   sensor_msgs
   roscpp
@@ -176,6 +177,16 @@ add_executable(arm_target_finder_node
     ${SRC_FILE}
 )
 
+add_executable(collect_sample_node 
+    src/arm_target_finder/CollectSample.cpp
+    ${SRC_FILE}
+)
+
+add_executable(mb
+    src/arm_target_finder/ModelBuild.cpp
+    ${SRC_FILE}
+)
+
 ## Add cmake target dependencies of the executable
 ## same as for the library above
 # add_dependencies(tinker_object_recognition_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
@@ -193,6 +204,17 @@ target_link_libraries(arm_target_finder_node
     ${PCL_LIBRARIES}
 )
 
+target_link_libraries(collect_sample_node 
+    ${catkin_LIBRARIES}
+    ${OpenCV_LIBS}
+    ${PCL_LIBRARIES}
+)
+
+target_link_libraries(mb
+    ${catkin_LIBRARIES}
+    ${OpenCV_LIBS}
+    ${PCL_LIBRARIES}
+)
 
 #############
 ## Install ##

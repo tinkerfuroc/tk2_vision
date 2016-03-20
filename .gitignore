@@ -7,11 +7,13 @@ install
 *.pcd
 *.bin
 output/
-testpicture
 
+list.txt
 
 *.swp
 *~
+
+*.sr
 
 tags
 

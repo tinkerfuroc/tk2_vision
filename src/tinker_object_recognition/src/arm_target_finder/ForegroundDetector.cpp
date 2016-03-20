@@ -18,14 +18,15 @@ namespace tinker
         
         void ForegroundDetector::FilterByEntropy(const cv::Mat & source_mat, cv::Mat & desk_mat)
         {
-            desk_mat = EntropyFilterMask(source_mat, entropy_threshold_, filter_size_, 4);
+            cv::Mat mat_grey(source_mat.rows, source_mat.cols, CV_8UC1);
+            cv::cvtColor(source_mat, mat_grey, CV_BGR2GRAY);
+            desk_mat = EntropyFilterMask(mat_grey, entropy_threshold_, filter_size_, 4);
         }
         
         cv::Mat ForegroundDetector::BuildMask(const cv::Mat & mat)
         {
             //get threshold of desk_mat
-            cv::Mat mat_threshold(mat.rows, mat.cols, CV_8UC1); 
-            cv::cvtColor(mat, mat_threshold, CV_BGR2GRAY);
+            cv::Mat mat_threshold(mat); 
             cv::threshold(mat_threshold, mat_threshold, 10, 255, cv::THRESH_BINARY);
             //find contours
             std::vector<std::vector<cv::Point> > contours;
