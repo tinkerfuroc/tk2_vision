@@ -11,7 +11,7 @@
 namespace tinker {
 namespace vision{
 
-//All mask image returned are CV_8UC1
+//All mask image returned are CV_8UC1, all input should be grayscale
 //Pixels with mask value 0 will be removed when applying the mask
 cv::Mat EntropyFilterMask(const cv::Mat & image, float threshold, int filter_size, int jump_step);
 cv::Mat EntropyFilterMask(const cv::Mat & image, float threshold, int filter_size, const std::vector<float> & entropy_table, int jump_step);

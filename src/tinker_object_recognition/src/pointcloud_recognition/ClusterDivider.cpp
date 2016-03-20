@@ -28,19 +28,18 @@ namespace vision
         // Create the filtering object: downsample the dataset using a leaf size of 1cm
         pcl::VoxelGrid<pcl::PointXYZRGB> vg;
         vg.setInputCloud (point_cloud_);
-        vg.setLeafSize (1.f, 1.f, 1.f);
+        vg.setLeafSize (0.01f, 0.01f, 0.01f);
         vg.filter (*cloud_filtered);
-
         pcl::search::KdTree<pcl::PointXYZRGB>::Ptr tree (new pcl::search::KdTree<pcl::PointXYZRGB>);
         tree->setInputCloud (cloud_filtered);
 
         std::vector<pcl::PointIndices> cluster_indices;
         pcl::EuclideanClusterExtraction<pcl::PointXYZRGB> ec;
-        ec.setClusterTolerance (4); // 4cm
-        ec.setMinClusterSize (150);
+        ec.setClusterTolerance (0.04); // 4cm
+        ec.setMinClusterSize (10);
         ec.setMaxClusterSize (25000);
         ec.setSearchMethod (tree);
-        ec.setInputCloud (cloud_filtered);
+        ec.setInputCloud (point_cloud_);
         ec.extract (cluster_indices);
 
         vector<PointCloudPtr> divided_clouds;
@@ -48,7 +47,7 @@ namespace vision
         {
             pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_cluster (new pcl::PointCloud<pcl::PointXYZRGB>);
             for (std::vector<int>::const_iterator pit = it->indices.begin (); pit != it->indices.end (); ++pit)
-            cloud_cluster->points.push_back (cloud_filtered->points[*pit]);
+            cloud_cluster->points.push_back (point_cloud_->points[*pit]);
             cloud_cluster->width = cloud_cluster->points.size();
             cloud_cluster->height = 1;
             cloud_cluster->is_dense = true;
