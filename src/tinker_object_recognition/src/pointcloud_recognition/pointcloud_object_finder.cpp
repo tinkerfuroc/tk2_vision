@@ -88,7 +88,11 @@ void PointCloudObjectFinder::TimerCallback(const ros::TimerEvent & event) {
         header.stamp = ros::Time::now();
         header.frame_id = "map";
         recognized_objects.header = header;
+        int i = 0;
+        char buf[100];
         BOOST_FOREACH(PointCloudPtr object_cloud, object_clouds) {
+            sprintf(buf, "/home/furoc/%d.pcd", i);
+            pcl::io::savePCDFile(buf, *object_cloud);
             object_recognition_msgs::RecognizedObject object;
             geometry_msgs::Point center = GetCenter(object_cloud);
             //ROS_INFO("center at %f %f %f", center.x, center.y, center.z);
@@ -99,6 +103,7 @@ void PointCloudObjectFinder::TimerCallback(const ros::TimerEvent & event) {
             object.pose.header = header;
             object.pose.pose.pose.position = center;
             recognized_objects.objects.push_back(object);
+            i++;
         }
         object_pub_.publish(recognized_objects);
     }
@@ -119,6 +124,7 @@ vector<PointCloudPtr> PointCloudObjectFinder::GetObjectPointClouds() {
     ApplyMask(entropy_mask, depth_image_, cv::Vec3s(0, 0, 0));
     ApplyMask(entropy_mask, rgb_image_, cv::Vec3b(0, 0, 0));
     PointCloudPtr filtered_cloud = BuildPointCloud(depth_image_, rgb_image_); 
+    pcl::io::savePCDFile("/home/furoc/raw.pcd", *filtered_cloud);
     ClusterDivider divider(filtered_cloud);
     return divider.GetDividedPointClouds();
 }
