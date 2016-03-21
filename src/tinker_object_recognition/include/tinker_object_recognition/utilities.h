@@ -7,12 +7,16 @@
 #include <pcl_conversions/pcl_conversions.h>
 #include <pcl/conversions.h>
 #include <sensor_msgs/PointCloud2.h>
+#include <opencv2/imgproc/imgproc.hpp>
+#include <opencv2/opencv_modules.hpp>
+#include <opencv2/core/core.hpp>
 
 namespace tinker {
 namespace vision {
 
 geometry_msgs::Point GetCenter(PointCloudPtr point_cloud);
 sensor_msgs::PointCloud2 ToROSCloud(PointCloudPtr point_cloud);
+cv::Mat HistogramEqualizeRGB(const cv::Mat & src);
 
 }
 }

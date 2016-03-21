@@ -424,10 +424,7 @@ SRCModel* TrainSRCModel(
 	SRCModel * model= new SRCModel;
 	model->n_subject_samples_= n_subject_samples;
 	model->sample_size_= sample_size;
-	//std::cout<<"beforetrainsubjectn"<<std::endl;
-	//xf
 	TrainSubjectNames(train_sample_list, n_subject_samples, &(model->subject_names_));
-	//std::cout<<"trainsubjectn"<<std::endl;//xf
 	model->A_= LoadSamples(train_sample_list, sample_size);
 	return model;
 }
@@ -477,8 +474,8 @@ void Recognize(
 	    out_name = model->subject_names_[iss.id];
 	}
 }
-string toString(int n)
-{
+
+string toString(int n) {
     std::stringstream newstr;
     newstr << n;
     return newstr.str();   

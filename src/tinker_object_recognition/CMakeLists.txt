@@ -173,7 +173,7 @@ add_executable(tinker_pointcloud_recognition_node
 )
 
 add_executable(arm_target_finder_node 
-    src/arm_target_finder/ObjectClassify.cpp
+    src/graph_recognition//ObjectClassify.cpp
     ${SRC_FILE}
 )
 
@@ -182,8 +182,8 @@ add_executable(collect_sample_node
     ${SRC_FILE}
 )
 
-add_executable(mb
-    src/arm_target_finder/ModelBuild.cpp
+add_executable(model_build
+    src/graph_recognition/ModelBuild.cpp
     ${SRC_FILE}
 )
 
@@ -210,7 +210,7 @@ target_link_libraries(collect_sample_node
     ${PCL_LIBRARIES}
 )
 
-target_link_libraries(mb
+target_link_libraries(model_build
     ${catkin_LIBRARIES}
     ${OpenCV_LIBS}
     ${PCL_LIBRARIES}
