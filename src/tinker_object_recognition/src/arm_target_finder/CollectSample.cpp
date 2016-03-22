@@ -80,8 +80,8 @@ void ArmCamImgCallback(const sensor_msgs::Image::ConstPtr &msg) {
     res_mat = HistogramEqualizeRGB(res_mat);
     if (res_mat.cols > 0 && res_mat.rows > 0) {
         cv::imshow("view", res_mat);
-        int key = cvWaitKey(50);
-        if (key == 1048691 || key == 1179731)  //'s'||'S'
+        int key = cvWaitKey(100);
+        if (key == 1048691 || key == 1179731 || key == 115)  //'s'||'S'
         {
             if (!ng->finished) {
                 // save as png, compression level at 9.
@@ -107,7 +107,7 @@ void ArmCamImgCallback(const sensor_msgs::Image::ConstPtr &msg) {
                     vector<string> train_sample_list;
                     LoadSampleList(train_sample_list_file, &train_sample_list);
                     std::cout << train_sample_list.size() << std::endl;
-                    assert(train_sample_list.size() % n_subject_samples == 0);
+                    //assert(train_sample_list.size() % n_subject_samples == 0);
                     std::cout << "image file loaded" << std::endl;
 
                     SRCModel *src = TrainSRCModel(
@@ -156,6 +156,7 @@ int main(int argc, char **argv) {
     ros::Subscriber sub =
         nh.subscribe("tk2_com/arm_cam_image", 1, ArmCamImgCallback);
     ros::spin();
+    delete ng;
     return 0;
 }
 
