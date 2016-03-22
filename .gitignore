@@ -8,8 +8,13 @@ install
 *.bin
 output/
 
+list.txt
 
 *.swp
 *~
 
+*.sr
+
 tags
+
+deletesim.txt

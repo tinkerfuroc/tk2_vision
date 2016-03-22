@@ -10,6 +10,7 @@ find_package(PCL 1.7 REQUIRED)
 
 find_package(catkin REQUIRED COMPONENTS
   object_recognition_msgs
+  image_transport
   cv_bridge
   sensor_msgs
   roscpp
@@ -141,7 +142,18 @@ SET(SRC_FILE
     src/pointcloud_rebuild/pointcloud_builder.cpp
     src/pointcloud_recognition/ClusterDivider.cpp
     src/pointcloud_recognition/pointcloud_object_finder.cpp
+    src/CMT/CMT.cpp
+    src/CMT/common.cpp
+    src/CMT/Consensus.cpp
+    src/CMT/fastcluster.cpp
+    src/CMT/Fusion.cpp
+    src/CMT/Matcher.cpp
+    src/CMT/Tracker.cpp
+    src/SRC_model/SparseRecognition.cpp
+    src/arm_target_finder/ForegroundDetector.cpp
     src/utilities.cpp
+    src/tinyxml2.cpp
+    
 )
 
 ## Declare a C++ library
@@ -160,12 +172,45 @@ add_executable(tinker_pointcloud_recognition_node
     ${SRC_FILE}
 )
 
+add_executable(arm_target_finder_node 
+    src/graph_recognition//ObjectClassify.cpp
+    ${SRC_FILE}
+)
+
+add_executable(collect_sample_node 
+    src/arm_target_finder/CollectSample.cpp
+    ${SRC_FILE}
+)
+
+add_executable(model_build
+    src/graph_recognition/ModelBuild.cpp
+    ${SRC_FILE}
+)
+
 ## Add cmake target dependencies of the executable
 ## same as for the library above
 # add_dependencies(tinker_object_recognition_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Specify libraries to link a library or executable target against
 target_link_libraries(tinker_pointcloud_recognition_node
+    ${catkin_LIBRARIES}
+    ${OpenCV_LIBS}
+    ${PCL_LIBRARIES}
+)
+
+target_link_libraries(arm_target_finder_node 
+    ${catkin_LIBRARIES}
+    ${OpenCV_LIBS}
+    ${PCL_LIBRARIES}
+)
+
+target_link_libraries(collect_sample_node 
+    ${catkin_LIBRARIES}
+    ${OpenCV_LIBS}
+    ${PCL_LIBRARIES}
+)
+
+target_link_libraries(model_build
     ${catkin_LIBRARIES}
     ${OpenCV_LIBS}
     ${PCL_LIBRARIES}
