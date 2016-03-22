@@ -1,9 +1,0 @@
-Header header
-bool object_recognized
-float32 object_similarity
-string object_name
-sensor_msgs/Image origin_img
-uint16 object_rect_left
-uint16 object_rect_top
-uint16 object_rect_width
-uint16 object_rect_height
