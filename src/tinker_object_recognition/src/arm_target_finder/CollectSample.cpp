@@ -76,45 +76,31 @@ void ArmCamImgCallback(const sensor_msgs::Image::ConstPtr &msg) {
     cv_bridge::CvImagePtr cv_ptr =
         cv_bridge::toCvCopy(msg, sensor_msgs::image_encodings::BGR8);
     cv::Mat cam_mat = cv_ptr->image;
-    cv::Mat res_mat = fd.TakePhoto(cam_mat);
-    res_mat = HistogramEqualizeRGB(res_mat);
-    if (res_mat.cols > 0 && res_mat.rows > 0) {
-        cv::imshow("view", res_mat);
-        int key = cvWaitKey(100);
-        if (key == 1048691 || key == 1179731 || key == 115)  //'s'||'S'
-        {
-            if (!ng->finished) {
-                // save as png, compression level at 9.
-                std::vector<int> compression_params;
-                compression_params.push_back(CV_IMWRITE_PNG_COMPRESSION);
-                compression_params.push_back(9);
-                imwrite(filename, res_mat, compression_params);
-                listfile << filename << std::endl;
-                ROS_INFO("%s saved", filename);
-                filename = ng->GetNextName();
-                ROS_INFO("waiting for %s ...", filename);
-            } else {
-                if (!listfileclosed) {
-                    listfile.close();
-                    listfileclosed = true;
-
-                    string train_sample_list_file(listfilename);
-                    int n_subject_samples = object_num;
-                    const int sample_width = 80;
-                    const int sample_height = 100;
-                    CvSize sample_size = cvSize(sample_width, sample_height);
-                    const string src_model_file = "./sample.sr";
-                    vector<string> train_sample_list;
-                    LoadSampleList(train_sample_list_file, &train_sample_list);
-                    std::cout << train_sample_list.size() << std::endl;
-                    //assert(train_sample_list.size() % n_subject_samples == 0);
-                    std::cout << "image file loaded" << std::endl;
-
-                    SRCModel *src = TrainSRCModel(
-                        train_sample_list, sample_size, n_subject_samples);
-                    SaveSRCModel(src, src_model_file);
-                    ReleaseSRCModel(&src);
-                    printf("saveing model finished\n");
+    cv::Mat res_mat;
+    
+    if(fd.CutForegroundOut(cam_mat, res_mat) == ForegroundDetector::DETECTED)
+    {
+        res_mat = HistogramEqualizeRGB(res_mat);
+        if (res_mat.cols > 0 && res_mat.rows > 0) {
+            cv::imshow("view", res_mat);
+            int key = cvWaitKey(100);
+            if (key == 1048691 || key == 1179731 || key == 115)  //'s'||'S'
+            {
+                if (!ng->finished) {
+                    // save as png, compression level at 9.
+                    std::vector<int> compression_params;
+                    compression_params.push_back(CV_IMWRITE_PNG_COMPRESSION);
+                    compression_params.push_back(9);
+                    imwrite(filename, res_mat, compression_params);
+                    listfile << filename << std::endl;
+                    ROS_INFO("%s saved", filename);
+                    filename = ng->GetNextName();
+                    ROS_INFO("waiting for %s ...", filename);
+                } else {
+                    if (!listfileclosed) {
+                        listfile.close();
+                        listfileclosed = true;
+                    }
                 }
             }
         }

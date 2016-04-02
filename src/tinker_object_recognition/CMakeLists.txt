@@ -172,20 +172,9 @@ add_executable(tinker_pointcloud_recognition_node
     ${SRC_FILE}
 )
 
-add_executable(arm_target_finder_node 
-    src/graph_recognition//ObjectClassify.cpp
-    ${SRC_FILE}
-)
-
-add_executable(collect_sample_node 
-    src/arm_target_finder/CollectSample.cpp
-    ${SRC_FILE}
-)
-
-add_executable(model_build
-    src/graph_recognition/ModelBuild.cpp
-    ${SRC_FILE}
-)
+add_executable(collect_sample_node src/arm_target_finder/CollectSample.cpp ${SRC_FILE})
+add_executable(recognizer_node src/arm_target_finder/Recognizer.cpp ${SRC_FILE})
+#add_executable(model_build src/graph_recognition/ObjectClassify.cpp ${SRC_FILE})
 
 ## Add cmake target dependencies of the executable
 ## same as for the library above
@@ -198,24 +187,17 @@ target_link_libraries(tinker_pointcloud_recognition_node
     ${PCL_LIBRARIES}
 )
 
-target_link_libraries(arm_target_finder_node 
-    ${catkin_LIBRARIES}
-    ${OpenCV_LIBS}
-    ${PCL_LIBRARIES}
-)
-
 target_link_libraries(collect_sample_node 
     ${catkin_LIBRARIES}
     ${OpenCV_LIBS}
     ${PCL_LIBRARIES}
 )
 
-target_link_libraries(model_build
+target_link_libraries(recognizer_node
     ${catkin_LIBRARIES}
     ${OpenCV_LIBS}
     ${PCL_LIBRARIES}
 )
-
 #############
 ## Install ##
 #############
