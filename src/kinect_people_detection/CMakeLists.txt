@@ -9,8 +9,10 @@ find_package(freenect2 REQUIRED) ## Make sure you've install libfreenect2
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
+  people_msgs
   roscpp
   std_msgs
+  sensor_msgs
   message_generation
 )
 
@@ -132,7 +134,7 @@ LINK_DIRECTORIES(
 
 ADD_DEFINITIONS(
   ${PCL_DEFINITIONS}
-  )
+)
 
 ## Declare a C++ library
 # add_library(kinect_people_detection
@@ -152,10 +154,15 @@ add_executable(kinect_people_detection_server
     src/people_detection.cpp
     src/KinectParameters.cpp
     src/PointCloudBuilder.cpp
-    )
+)
 add_executable(kinect_people_detection_client
     src/kinect_people_detection_client.cpp
-    )
+)
+add_executable(kinect_people_detection_node
+    src/kinect_people_detection_node.cpp
+    src/KinectParameters.cpp
+    src/PointCloudBuilder.cpp
+)        
 
 ## Add cmake target dependencies of the executable
 ## same as for the library above
@@ -163,11 +170,10 @@ add_executable(kinect_people_detection_client
 
 add_dependencies(kinect_people_detection_server
     kinect_people_detection_gencpp
-    )
+)
 add_dependencies(kinect_people_detection_client
     kinect_people_detection_gencpp
-    )
-
+)
 
 ## Specify libraries to link a library or executable target against
 # target_link_libraries(kinect_people_detection_node
@@ -180,10 +186,17 @@ target_link_libraries(kinect_people_detection_server
   ${OpenCV_LIBS}
   ${PCL_LIBRARIES}
   ${LIBUSB_1_LIBRARIES}
-  )
+)
 target_link_libraries(kinect_people_detection_client
   ${catkin_LIBRARIES}
-  )
+)
+target_link_libraries(kinect_people_detection_node
+  ${catkin_LIBRARIES}
+  ${freenect2_LIBRARIES}
+  ${OpenCV_LIBS}
+  ${PCL_LIBRARIES}
+  ${LIBUSB_1_LIBRARIES}
+)
 
 #############
 ## Install ##
