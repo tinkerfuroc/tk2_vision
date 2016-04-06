@@ -15,7 +15,7 @@ namespace tinker {
 namespace vision {
 
 geometry_msgs::Point GetCenter(PointCloudPtr point_cloud);
-sensor_msgs::PointCloud2 ToROSCloud(PointCloudPtr point_cloud);
+sensor_msgs::PointCloud2 ToROSCloud(const pcl::PointCloud<pcl::PointXYZRGB> & point_cloud);
 cv::Mat HistogramEqualizeRGB(const cv::Mat & src);
 
 }

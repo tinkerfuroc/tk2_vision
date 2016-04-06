@@ -19,3 +19,5 @@ tags
 
 deletesim.txt
 buildimg
+*.pyc
+.ycm_extra_conf.py

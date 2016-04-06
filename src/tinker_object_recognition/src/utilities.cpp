@@ -24,10 +24,10 @@ geometry_msgs::Point GetCenter(PointCloudPtr point_cloud) {
     return center;
 }
 
-sensor_msgs::PointCloud2 ToROSCloud(PointCloudPtr point_cloud) {
+sensor_msgs::PointCloud2 ToROSCloud(const pcl::PointCloud<pcl::PointXYZRGB> & point_cloud) {
     sensor_msgs::PointCloud2 cloud;
     pcl::PCLPointCloud2 pcl_cloud;
-    pcl::toPCLPointCloud2(*point_cloud, pcl_cloud);
+    pcl::toPCLPointCloud2(point_cloud, pcl_cloud);
     pcl_conversions::fromPCL(pcl_cloud, cloud);
     return cloud;
 }

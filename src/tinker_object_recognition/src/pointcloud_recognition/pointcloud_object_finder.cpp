@@ -20,7 +20,7 @@ PointCloudObjectFinder::PointCloudObjectFinder()
     running_(true), private_nh("~/"), nh("/"),
     object_seq_(0), debug_seq_(0){
     object_pub_ = nh.advertise<object_recognition_msgs::RecognizedObjectArray>("point_cloud_objects", 1);
-    //debug_pub_ = private_nh.advertise<sensor_msgs::PointCloud2>("debug_output", 1);
+    debug_pub_ = private_nh.advertise<sensor_msgs::PointCloud2>("debug_output", 1);
     private_nh.param("depth_topic_name", depth_topic_name_, string("/depth/image"));
     private_nh.param("rgb_topic_name", rgb_topic_name_, string("/rgb/image"));
     depth_image_subscribe_ = nh.subscribe(depth_topic_name_,
@@ -83,6 +83,8 @@ void PointCloudObjectFinder::TimerCallback(const ros::TimerEvent & event) {
         depth_ready_ = false;
         vector<PointCloudPtr> object_clouds = GetObjectPointClouds();
         object_recognition_msgs::RecognizedObjectArray recognized_objects;
+        std_msgs::Header h;
+
         std_msgs::Header header;
         header.seq = object_seq_++;
         header.stamp = ros::Time::now();
@@ -90,13 +92,15 @@ void PointCloudObjectFinder::TimerCallback(const ros::TimerEvent & event) {
         recognized_objects.header = header;
         int i = 0;
         char buf[100];
+        pcl::PointCloud<pcl::PointXYZRGB> debug_cloud_;
         BOOST_FOREACH(PointCloudPtr object_cloud, object_clouds) {
             sprintf(buf, "/home/furoc/%d.pcd", i);
             pcl::io::savePCDFile(buf, *object_cloud);
+            debug_cloud_ += *object_cloud;
             object_recognition_msgs::RecognizedObject object;
             geometry_msgs::Point center = GetCenter(object_cloud);
             //ROS_INFO("center at %f %f %f", center.x, center.y, center.z);
-            sensor_msgs::PointCloud2 cloud = ToROSCloud(object_cloud);
+            sensor_msgs::PointCloud2 cloud = ToROSCloud(*object_cloud);
             object.header = header;
             object.pose.header = header;
             object.point_clouds.push_back(cloud);
@@ -106,6 +110,7 @@ void PointCloudObjectFinder::TimerCallback(const ros::TimerEvent & event) {
             i++;
         }
         object_pub_.publish(recognized_objects);
+        debug_pub_.publish(ToROSCloud(debug_cloud_));
     }
 }
 
