@@ -88,18 +88,19 @@ void PointCloudObjectFinder::TimerCallback(const ros::TimerEvent & event) {
         std_msgs::Header header;
         header.seq = object_seq_++;
         header.stamp = ros::Time::now();
-        header.frame_id = "map";
+        header.frame_id = "base_link";
         recognized_objects.header = header;
         int i = 0;
         char buf[100];
         pcl::PointCloud<pcl::PointXYZRGB> debug_cloud_;
+        ROS_INFO("found %lu objects", object_clouds.size());
         BOOST_FOREACH(PointCloudPtr object_cloud, object_clouds) {
-            sprintf(buf, "/home/furoc/%d.pcd", i);
+            sprintf(buf, "/home/iarc/kinect_data/%d.pcd", i);
             pcl::io::savePCDFile(buf, *object_cloud);
             debug_cloud_ += *object_cloud;
             object_recognition_msgs::RecognizedObject object;
             geometry_msgs::Point center = GetCenter(object_cloud);
-            //ROS_INFO("center at %f %f %f", center.x, center.y, center.z);
+            ROS_INFO("center at %f %f %f", center.x, center.y, center.z);
             sensor_msgs::PointCloud2 cloud = ToROSCloud(*object_cloud);
             object.header = header;
             object.pose.header = header;
@@ -109,27 +110,33 @@ void PointCloudObjectFinder::TimerCallback(const ros::TimerEvent & event) {
             recognized_objects.objects.push_back(object);
             i++;
         }
+        sensor_msgs::PointCloud2 debug_cloud = ToROSCloud(debug_cloud_);
+        debug_cloud.header.seq = debug_seq_++;
+        debug_cloud.header.stamp = ros::Time::now();
+        debug_cloud.header.frame_id = "base_link";
+        debug_pub_.publish(debug_cloud);
         object_pub_.publish(recognized_objects);
-        debug_pub_.publish(ToROSCloud(debug_cloud_));
     }
 }
 
 vector<PointCloudPtr> PointCloudObjectFinder::GetObjectPointClouds() {
-    cv::pyrDown(depth_image_, depth_image_);
-    cv::pyrDown(rgb_image_, rgb_image_);
+    cv::resize(depth_image_, depth_image_, cv::Size(), 
+            0.5, 0.5, cv::INTER_NEAREST);
+    cv::resize(rgb_image_, rgb_image_, cv::Size(), 
+            0.5, 0.5, cv::INTER_NEAREST);
     cv::Mat gray_image;
     cv::cvtColor(rgb_image_, gray_image, CV_BGR2GRAY);
     cv::Mat line_mask = LineFilterMask(gray_image, 3.5);
     ApplyMask(line_mask, depth_image_, cv::Vec3s(0, 0, 0));
     ApplyMask(line_mask, rgb_image_, cv::Vec3b(0, 0, 0));
     cv::Mat entropy_mask = EntropyFilterMask(gray_image, 0.4, 5, 2);
-    DilateImage(entropy_mask, 3);
-    ErodeImage(entropy_mask, 5);
-    DilateImage(entropy_mask, 5);
+    DilateImage(entropy_mask, 4);
+    ErodeImage(entropy_mask, 6);
+    DilateImage(entropy_mask, 6);
     ApplyMask(entropy_mask, depth_image_, cv::Vec3s(0, 0, 0));
     ApplyMask(entropy_mask, rgb_image_, cv::Vec3b(0, 0, 0));
     PointCloudPtr filtered_cloud = BuildPointCloud(depth_image_, rgb_image_); 
-    pcl::io::savePCDFile("/home/furoc/raw.pcd", *filtered_cloud);
+    pcl::io::savePCDFile("/home/iarc/kinect_data/raw.pcd", *filtered_cloud);
     ClusterDivider divider(filtered_cloud);
     return divider.GetDividedPointClouds();
 }
