@@ -22,8 +22,16 @@ namespace tinker
         public:
             ForegroundDetector(int filter_size, double entropy_threshold)
                 : filter_size_(filter_size), entropy_threshold_(entropy_threshold) {}
+                
+            //Filter the picture and paint the background with black color
+            //all black if nothing detected
             void Filter(const cv::Mat & source_mat, cv::Mat & desk_mat);
-            cv::Mat TakePhoto(const cv::Mat & source_mat);
+            
+            //Filter the picture and cut the foreground out
+            //keep desk_mat constant if nothing detected and return -1;
+            int CutForegroundOut(const cv::Mat & source_mat, cv::Mat & desk_mat);
+            const static int DETECTED = 0;
+            const static int NOT_DETECTED = -1;
         private:
             //processes.
             void FilterByEntropy(const cv::Mat & source_mat, cv::Mat & desk_mat);

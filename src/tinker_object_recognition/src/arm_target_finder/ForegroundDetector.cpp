@@ -136,17 +136,17 @@ namespace tinker
             BuildImageByMask(source_mat, desk_mat, mask_mat);
         }
 
-        cv::Mat ForegroundDetector::TakePhoto(const cv::Mat & source_mat)
+        int ForegroundDetector::CutForegroundOut(const cv::Mat & source_mat, cv::Mat & desk_mat)
         {
             //copy the source
-            cv::Mat desk_mat;
-            source_mat.copyTo(desk_mat);
+            cv::Mat res_mat;
+            source_mat.copyTo(res_mat);
             //filter by entropy
-            FilterByEntropy(source_mat, desk_mat);
+            FilterByEntropy(source_mat, res_mat);
             //dilate, erode, and dilate again
-            OpenImage(desk_mat);
+            OpenImage(res_mat);
             //build mask
-            cv::Mat mask_mat = BuildMask(desk_mat);
+            cv::Mat mask_mat = BuildMask(res_mat);
             DilateImage(mask_mat, 3);
             //divide mask by y
             DivideMaskByY(mask_mat);
@@ -155,22 +155,30 @@ namespace tinker
             std::vector<cv::Vec4i> hierarchy;
             cv::findContours(mask_mat, contours, hierarchy, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_SIMPLE);
             //find biggest contour
-            double largest_area = 0.0;
-            int largest_contour_no = -1;
-            for(int i = 0; i < contours.size(); i++ )
+            if(contours.size())
             {
-                double a = cv::contourArea(contours[i], false);
-                if(a > largest_area)
+                double largest_area = 0.0;
+                int largest_contour_no = -1;
+                for(int i = 0; i < contours.size(); i++ )
                 {
-                    largest_area = a;
-                    largest_contour_no = i;
+                    double a = cv::contourArea(contours[i], false);
+                    if(a > largest_area)
+                    {
+                        largest_area = a;
+                        largest_contour_no = i;
+                    }
+                
                 }
-            
+                cv::Rect bound = cv::boundingRect(contours[largest_contour_no]);
+                cv::Mat roi(source_mat, bound);
+                roi.copyTo(desk_mat);
+                return ForegroundDetector::DETECTED;
             }
-            cv::Rect bound = cv::boundingRect(contours[largest_contour_no]);
-            cv::Mat roi(source_mat, bound);
-            roi.copyTo(desk_mat);
-            return desk_mat;
+            else
+            {
+                //no contour
+                return ForegroundDetector::NOT_DETECTED;
+            }
         }
         
 
