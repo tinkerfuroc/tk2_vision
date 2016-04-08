@@ -1,0 +1,7 @@
+<launch>
+    <node pkg="tinker_object_recognition" type="tinker_pointcloud_recognition_node" name="tinker_pointcloud_recognition_node" output="screen">
+        <param name="rate" value="5.0"/>
+        <param name="depth_topic_name" value="/head/kinect2/depth/image_depth"/>
+        <param name="rgb_topic_name" value="/head/kinect2/rgb/image_color"/>
+    </node>
+</launch>

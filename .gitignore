@@ -8,8 +8,16 @@ install
 *.bin
 output/
 
+list.txt
 
 *.swp
 *~
 
+*.sr
+
 tags
+
+deletesim.txt
+buildimg
+*.pyc
+.ycm_extra_conf.py
