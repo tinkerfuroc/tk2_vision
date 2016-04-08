@@ -12,6 +12,7 @@ using std::vector;
 
 struct ClassifyResult {
     bool found;
+    int id;
     string name;
     double div_x;
     double div_y;
@@ -29,14 +30,19 @@ public:
         XmlRpc::XmlRpcValue image_class_info;
         private_nh_.getParam("image_class_info", image_class_info);
         private_nh_.getParam("vocabulary_file_name", vocabulary_filename_);
+        private_nh_.param("sample_count", sample_count_, 10);
+        private_nh_.param("accept_count", accept_count_, 5);
         bow_recognition_ = BoWRecognition(image_class_info);
         bow_recognition_.ReadVocabulary(vocabulary_filename_);
         object_classes = bow_recognition_.GetObjectClasses();
         svms = new CvSVM[object_classes.size()];
         ros::NodeHandle nh;
-        sub_ = nh.subscribe("tk2_com/arm_cam_image", 1, &BoWClassifyNode::ImageCallBack, this);
-        debug_pub_ = private_nh_.advertise<sensor_msgs::Image>("debug_image", 1);
-        pub_ = nh_.advertise<object_recognition_msgs::RecognizedObjectArray>("arm_cam_objects", 1);
+        sub_ = nh.subscribe("tk2_com/arm_cam_image", 1,
+                            &BoWClassifyNode::ImageCallBack, this);
+        debug_pub_ =
+            private_nh_.advertise<sensor_msgs::Image>("debug_image", 1);
+        pub_ = nh_.advertise<object_recognition_msgs::RecognizedObjectArray>(
+            "arm_cam_objects", 1);
         find_object_server_ = nh.advertiseService(
             "arm_find_objects", &BoWClassifyNode::FindObjectService, this);
         for (int i = 0; i < object_classes.size(); i++) {
@@ -56,7 +62,6 @@ public:
         header.frame_id = "hand";
         objects_.header = header;
         if (result_.found) {
-            ROS_INFO("Found %s", result_.name.c_str());
             object_recognition_msgs::RecognizedObject object;
             object.header = header;
             object.type.key = result_.name;
@@ -94,9 +99,10 @@ public:
                 for (int i = 0; i < object_classes.size(); i++) {
                     if (svms[i].predict(bow_descriptor) > 0) {
                         double df_val = svms[i].predict(bow_descriptor, true);
-                        ROS_DEBUG("found df_val %lf for class %s", df_val, 
-                                object_classes[i].c_str());
+                        ROS_DEBUG("found df_val %lf for class %s", df_val,
+                                  object_classes[i].c_str());
                         result.name = object_classes[i];
+                        result.id = i;
                         positive_count++;
                     }
                 }
@@ -119,16 +125,43 @@ public:
     bool FindObjectService(
         tinker_object_recognition::FindObjects::Request &req,
         tinker_object_recognition::FindObjects::Response &res) {
-        new_frame_ = false;
-        while (!new_frame_) ros::spinOnce();
-        res.success = result_.found;
-        res.objects = objects_;
+        vector<int> found_count(object_classes.size(), 0);
+        vector<object_recognition_msgs::RecognizedObjectArray> object_results(
+            object_classes.size());
+        for (int i = 0; i < sample_count_; i++) {
+            new_frame_ = false;
+            while (!new_frame_) ros::spinOnce();
+            if (result_.found) {
+                ROS_INFO("Found %s", result_.name.c_str());
+                found_count[result_.id]++;
+                object_results[result_.id] = objects_;
+            }
+        }
+        int recognized_class_count = 0;
+        int recognized_class_id = 0;
+        for (int i = 0; i < object_classes.size(); i++) {
+            if (found_count[i] > accept_count_) {
+                recognized_class_id = i;
+                recognized_class_count++;
+            }
+        }
+        ROS_INFO("Find object result:");
+        if (recognized_class_count == 1) {
+            res.success = true;
+            res.objects = object_results[recognized_class_id];
+            ROS_INFO("object class: %s",
+                     res.objects.objects[0].type.key.c_str());
+            ROS_INFO("div_x %lf, div_y %lf",
+                     res.objects.objects[0].pose.pose.pose.position.x,
+                     res.objects.objects[0].pose.pose.pose.position.y);
+        }
         return true;
     }
 
     ~BoWClassifyNode() {
-        if (svms) delete [] svms;
+        if (svms) delete[] svms;
     }
+
 private:
     ros::NodeHandle private_nh_;
     ros::NodeHandle nh_;
@@ -140,11 +173,13 @@ private:
     ros::ServiceServer find_object_server_;
     ros::Subscriber sub_;
     vector<string> object_classes;
-    CvSVM * svms;
+    CvSVM *svms;
     ClassifyResult result_;
     object_recognition_msgs::RecognizedObjectArray objects_;
     int debug_seq_;
     int seq_;
+    int sample_count_;
+    int accept_count_;
     bool new_frame_;
 };
 
