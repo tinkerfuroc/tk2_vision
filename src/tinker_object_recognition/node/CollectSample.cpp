@@ -82,6 +82,7 @@ void ArmCamImgCallback(const sensor_msgs::Image::ConstPtr &msg) {
     {
         //res_mat = HistogramEqualizeRGB(res_mat);
         if (res_mat.cols > 0 && res_mat.rows > 0) {
+            ROS_INFO("Found");
             cv::imshow("view", res_mat);
             int key = cvWaitKey(100);
             if (key == 1048691 || key == 1179731 || key == 115)  //'s'||'S'

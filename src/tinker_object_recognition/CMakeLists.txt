@@ -19,6 +19,8 @@ find_package(catkin REQUIRED COMPONENTS
   message_generation
 )
 
+ADD_DEFINITIONS(-DWITH_OPENCL=OFF)
+
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
 
@@ -168,7 +170,7 @@ add_executable(tinker_pointcloud_recognition_node
 )
 
 add_executable(collect_sample_node node/CollectSample.cpp ${SRC_FILE})
-add_executable(bow_train_node ./node/tinker_pointcloud_recognition_node.cpp ${SRC_FILE})
+add_executable(bow_train_node ./node/bow_train_node.cpp ${SRC_FILE})
 add_executable(bow_classify_node ./node/bow_classify_node.cpp ${SRC_FILE})
 
 ## Add cmake target dependencies of the executable

@@ -16,15 +16,18 @@ void BoWData::InitBoWData(XmlRpc::XmlRpcValue & data_info) {
     int object_num = 0;
     ROS_ASSERT(data_info.hasMember("object_classes"));
     ROS_ASSERT(data_info.hasMember("image_num"));
-    ROS_ASSERT(data_info.hasMember("image_dir"));
+    ROS_ASSERT(data_info.hasMember("image_folder_name"));
     ROS_ASSERT(data_info["image_num"].getType() == XmlRpc::XmlRpcValue::TypeInt);
     ROS_ASSERT(data_info["object_classes"].getType() == XmlRpc::XmlRpcValue::TypeArray);
-    string image_dir = data_info["iamge_dir"];
-    int image_num = (int)data_info["image_num"];
+    string image_dir = data_info["image_folder_name"];
+    object_num = (int)data_info["image_num"];
     XmlRpc::XmlRpcValue object_classes = data_info["object_classes"];
+    ROS_INFO("Object classes:");
     for (int i = 0 ; i < object_classes.size(); i++) {
         ROS_ASSERT(object_classes[i].getType() == XmlRpc::XmlRpcValue::TypeString);
-        objectclasses_.push_back(object_classes[i]);
+        string object_class = (string)object_classes[i];
+        ROS_INFO("%s", object_class.c_str());
+        objectclasses_.push_back(object_class);
     }
     int counter = 0;
     int subject_counter_ = 0;

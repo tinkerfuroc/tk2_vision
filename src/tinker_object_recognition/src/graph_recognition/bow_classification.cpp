@@ -2,6 +2,8 @@
 #include <boost/foreach.hpp>
 #include <ros/ros.h>
 #include <cstdlib>
+#include "tinker_object_recognition/common.h"
+#include <opencv2/nonfree/nonfree.hpp>
 
 using std::string;
 using std::map;
@@ -13,10 +15,13 @@ BoWRecognition::BoWRecognition(XmlRpc::XmlRpcValue& image_class_info)
     : bow_data_(image_class_info),
       descriptor_type_("SURF"),
       matcher_type_("BruteForce") {
+    ROS_INFO("BoW extractor initializing");
+    cv::initModule_nonfree();
     if (image_class_info.hasMember("descriptor_type"))
         descriptor_type_ = (string)image_class_info["descriptor_type"];
     if (image_class_info.hasMember("matcher_type"))
         matcher_type_ = (string)image_class_info["matcher_type"];
+    ROS_INFO("Using %s %s", descriptor_type_.c_str(), matcher_type_.c_str());
     ROS_ASSERT(image_class_info.hasMember("image_folder_name"));
     image_folder_name = (string)image_class_info["image_folder_name"];
     feature_detector_ = cv::FeatureDetector::create(descriptor_type_);
@@ -27,6 +32,7 @@ BoWRecognition::BoWRecognition(XmlRpc::XmlRpcValue& image_class_info)
     ROS_ASSERT(!desc_matcher_.empty());
     bow_extractor_ = cv::Ptr<cv::BOWImgDescriptorExtractor>(
         new cv::BOWImgDescriptorExtractor(desc_extractor_, desc_matcher_));
+    ROS_INFO("BoW extractor initialization complete");
 }
 
 bool BoWRecognition::SaveModelFile() { return true; }
@@ -47,7 +53,7 @@ cv::Mat BoWRecognition::TrainVocabulary() {
     bow_data_.GetClassImages(vocab_params_.trainObjClass, CV_OBD_TRAIN, images,
                              objectPresent);
 
-    ROS_INFO("Computer Descriptors...");
+    ROS_INFO("Computing Descriptors...");
     cv::RNG& rng = cv::theRNG();
     cv::TermCriteria terminate_criterion;
     terminate_criterion.epsilon = FLT_EPSILON;
