@@ -9,10 +9,19 @@ namespace tinker {
 namespace vision {
 //#define __DEBUG__
 
-typedef pcl::PointCloud<pcl::PointXYZRGB>::Ptr PointCloudPtr;
+typedef pcl::PointXYZRGB PointT;
+typedef pcl::PointCloud<PointT> PointCloud;
+typedef PointCloud::Ptr PointCloudPtr;
+typedef PointCloud::ConstPtr PointCloudConstPtr;
+
+typedef pcl::Normal PointNT;
+typedef pcl::PointCloud<PointNT> PointCloudNT;
+typedef PointCloudNT::Ptr PointCloudNTPtr;
+typedef PointCloudNT::ConstPtr PointCloudNTConstPtr;
+
 typedef XmlRpc::XmlRpcValue::ValueStruct::iterator XmlIter;
 typedef XmlRpc::XmlRpcValue::ValueStruct::const_iterator XmlcIter;
 }
 }
 
-#endif  // KINECTDATAANALYZER_COMMON_H
+#endif  // __TINKER_VISION_COMMON_H__

@@ -143,7 +143,12 @@ SET(SRC_FILE
     src/graph_recognition/bow_parameter.cpp
     src/graph_recognition/bow_classification.cpp
     src/pointcloud_rebuild/pointcloud_builder.cpp
-    src/pointcloud_recognition/ClusterDivider.cpp
+    src/pointcloud_filter/2dmask_filter.cpp
+    src/pointcloud_filter/rgbd_plane_detector.cpp
+    src/pointcloud_recognition/cluster_divider.cpp
+    src/pointcloud_recognition/2d_cluster_divider.cpp
+    src/pointcloud_recognition/edge_cluster_divider.cpp
+    src/pointcloud_recognition/object_cluster.cpp
     src/pointcloud_recognition/pointcloud_object_finder.cpp
     src/arm_target_finder/ForegroundDetector.cpp
     src/utilities.cpp

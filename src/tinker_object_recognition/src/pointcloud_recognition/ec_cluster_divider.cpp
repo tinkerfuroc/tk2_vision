@@ -1,3 +1,8 @@
+/*
+ * 降采样、欧几里得聚类，分离点云
+ *
+ */
+
 #include <pcl/ModelCoefficients.h>
 #include <pcl/point_types.h>
 #include <pcl/io/pcd_io.h>
@@ -9,7 +14,7 @@
 #include <pcl/sample_consensus/model_types.h>
 #include <pcl/segmentation/sac_segmentation.h>
 #include <pcl/segmentation/extract_clusters.h>
-#include "tinker_object_recognition/pointcloud_recognition/ClusterDivider.h"
+#include "tinker_object_recognition/pointcloud_recognition/ec_cluster_divider.h"
 
 namespace tinker
 {
@@ -17,11 +22,11 @@ namespace vision
 {
     using std::vector;
 
-    ClusterDivider::ClusterDivider(PointCloudPtr point_cloud)
+    ClusterDividerEC::ClusterDividerEC(PointCloudPtr point_cloud)
         :point_cloud_(point_cloud)
     { }
 
-    std::vector<PointCloudPtr> ClusterDivider::GetDividedPointClouds()
+    std::vector<PointCloudPtr> ClusterDividerEC::GetDividedPointClouds()
     {
         PointCloudPtr cloud_filtered (new pcl::PointCloud<pcl::PointXYZRGB>);
 
