@@ -2,7 +2,6 @@
 // Du 2016.1.15.
 //
 
-#include <tinker_object_recognition/SRC_model/SparseRecognition.h>
 #include <tinker_object_recognition/arm_target_finder/ForegroundDetector.h>
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
@@ -19,6 +18,8 @@
 #include "tinker_object_recognition/utilities.h"
 using namespace tinyxml2;
 using namespace tinker::vision;
+using namespace std;
+using namespace cv;
 
 class NameGenerator {
 public:

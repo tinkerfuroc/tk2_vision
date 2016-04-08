@@ -16,6 +16,7 @@ find_package(catkin REQUIRED COMPONENTS
   roscpp
   rospy
   tf
+  message_generation
 )
 
 ## System dependencies are found with CMake's conventions
@@ -59,11 +60,10 @@ find_package(catkin REQUIRED COMPONENTS
 # )
 
 ## Generate services in the 'srv' folder
-# add_service_files(
-#   FILES
-#   Service1.srv
-#   Service2.srv
-# )
+add_service_files(
+  FILES
+  FindObjects.srv
+)
 
 ## Generate actions in the 'action' folder
 # add_action_files(
@@ -73,10 +73,10 @@ find_package(catkin REQUIRED COMPONENTS
 # )
 
 ## Generate added messages and services with any dependencies listed here
-# generate_messages(
-#   DEPENDENCIES
-#   object_recognition_msgs
-# )
+generate_messages(
+  DEPENDENCIES
+  object_recognition_msgs
+)
 
 ################################################
 ## Declare ROS dynamic reconfigure parameters ##
@@ -139,17 +139,12 @@ ADD_DEFINITIONS(
 SET(SRC_FILE
     src/graph_filter/ColorFixer.cpp
     src/graph_filter/filters.cpp
+    src/graph_recognition/bow_data.cpp
+    src/graph_recognition/bow_parameter.cpp
+    src/graph_recognition/bow_classification.cpp
     src/pointcloud_rebuild/pointcloud_builder.cpp
     src/pointcloud_recognition/ClusterDivider.cpp
     src/pointcloud_recognition/pointcloud_object_finder.cpp
-    src/CMT/CMT.cpp
-    src/CMT/common.cpp
-    src/CMT/Consensus.cpp
-    src/CMT/fastcluster.cpp
-    src/CMT/Fusion.cpp
-    src/CMT/Matcher.cpp
-    src/CMT/Tracker.cpp
-    src/SRC_model/SparseRecognition.cpp
     src/arm_target_finder/ForegroundDetector.cpp
     src/utilities.cpp
     src/tinyxml2.cpp
@@ -168,13 +163,13 @@ SET(SRC_FILE
 
 ## Declare a C++ executable
 add_executable(tinker_pointcloud_recognition_node 
-    src/pointcloud_recognition/tinker_pointcloud_recognition_node.cpp
+    node/tinker_pointcloud_recognition_node.cpp
     ${SRC_FILE}
 )
 
-add_executable(collect_sample_node src/arm_target_finder/CollectSample.cpp ${SRC_FILE})
-add_executable(recognizer_node src/arm_target_finder/Recognizer.cpp ${SRC_FILE})
-#add_executable(model_build src/graph_recognition/ObjectClassify.cpp ${SRC_FILE})
+add_executable(collect_sample_node node/CollectSample.cpp ${SRC_FILE})
+add_executable(bow_train_node ./node/tinker_pointcloud_recognition_node.cpp ${SRC_FILE})
+add_executable(bow_classify_node ./node/bow_classify_node.cpp ${SRC_FILE})
 
 ## Add cmake target dependencies of the executable
 ## same as for the library above
@@ -193,7 +188,13 @@ target_link_libraries(collect_sample_node
     ${PCL_LIBRARIES}
 )
 
-target_link_libraries(recognizer_node
+target_link_libraries(bow_train_node
+    ${catkin_LIBRARIES}
+    ${OpenCV_LIBS}
+    ${PCL_LIBRARIES}
+)
+
+target_link_libraries(bow_classify_node
     ${catkin_LIBRARIES}
     ${OpenCV_LIBS}
     ${PCL_LIBRARIES}
