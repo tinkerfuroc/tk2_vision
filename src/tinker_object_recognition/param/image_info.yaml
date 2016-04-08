@@ -1,5 +1,5 @@
 image_class_info:
-  image_folder_name: '/home/shs/tinker/test_image'
+  image_folder_name: '/home/iarc/test_image/'
   object_classes:
     - tea
     - fonta

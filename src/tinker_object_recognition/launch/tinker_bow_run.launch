@@ -1,0 +1,7 @@
+<launch>
+    <node pkg="tinker_object_recognition" type="com_arm_cam.py" name="com_arm_cam" output="screen" args="0"/>
+    <node pkg="tinker_object_recognition" type="bow_classify_node" name="bow_classify_node" output="screen">
+        <param name="vocabulary_file_name" value="test_vocabulary"/>
+        <rosparam command="load" file="$(find tinker_object_recognition)/param/image_info.yaml"/>
+    </node>
+</launch>

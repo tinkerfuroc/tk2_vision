@@ -19,7 +19,6 @@ find_package(catkin REQUIRED COMPONENTS
   message_generation
 )
 
-ADD_DEFINITIONS(-DWITH_OPENCL=OFF)
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)

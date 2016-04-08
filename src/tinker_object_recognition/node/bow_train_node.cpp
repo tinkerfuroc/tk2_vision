@@ -13,7 +13,8 @@ public:
         XmlRpc::XmlRpcValue image_class_info;
         private_nh_.getParam("image_class_info", image_class_info);
         ROS_ASSERT(image_class_info.size() > 0);
-        private_nh_.param("vocabulary_file_name", vocabulary_filename_);
+        private_nh_.getParam("vocabulary_file_name", vocabulary_filename_);
+        ROS_ASSERT(vocabulary_filename_.size() > 0);
         bow_recognition_ = BoWRecognition(image_class_info);
     }
 

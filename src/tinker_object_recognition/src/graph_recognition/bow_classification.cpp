@@ -13,7 +13,8 @@ namespace tinker {
 namespace vision {
 BoWRecognition::BoWRecognition(XmlRpc::XmlRpcValue& image_class_info)
     : bow_data_(image_class_info),
-      descriptor_type_("SURF"),
+      detector_type_("ORB"),
+      descriptor_type_("SIFT"),
       matcher_type_("BruteForce") {
     ROS_INFO("BoW extractor initializing");
     cv::initModule_nonfree();
@@ -24,7 +25,7 @@ BoWRecognition::BoWRecognition(XmlRpc::XmlRpcValue& image_class_info)
     ROS_INFO("Using %s %s", descriptor_type_.c_str(), matcher_type_.c_str());
     ROS_ASSERT(image_class_info.hasMember("image_folder_name"));
     image_folder_name = (string)image_class_info["image_folder_name"];
-    feature_detector_ = cv::FeatureDetector::create(descriptor_type_);
+    feature_detector_ = cv::FeatureDetector::create(detector_type_);
     desc_extractor_ = cv::DescriptorExtractor::create(descriptor_type_);
     desc_matcher_ = cv::DescriptorMatcher::create(matcher_type_);
     ROS_ASSERT(!feature_detector_.empty());
@@ -110,8 +111,9 @@ cv::Mat BoWRecognition::TrainVocabulary() {
 
 bool BoWRecognition::WriteVocabulary(const string& filename,
                                      const cv::Mat& vocabulary) {
-    ROS_INFO("Saving vocabulary...");
-    cv::FileStorage fs(image_folder_name + "/" + filename, cv::FileStorage::WRITE);
+    string vocab_filename = image_folder_name + "/" + filename;
+    ROS_INFO("Saving vocabulary to %s", vocab_filename.c_str());
+    cv::FileStorage fs(vocab_filename, cv::FileStorage::WRITE);
     if (fs.isOpened()) {
         fs << "vocabulary" << vocabulary;
         return true;
@@ -121,8 +123,9 @@ bool BoWRecognition::WriteVocabulary(const string& filename,
 
 cv::Mat BoWRecognition::ReadVocabulary(const string& filename) {
     cv::Mat vocabulary;
-    ROS_INFO("Reading vocabulary...");
-    cv::FileStorage fs(filename, cv::FileStorage::READ);
+    string vocab_filename = image_folder_name + "/" + filename;
+    ROS_INFO("Reading vocabulary %s", vocab_filename.c_str());
+    cv::FileStorage fs(vocab_filename, cv::FileStorage::READ);
     if (fs.isOpened()) {
         fs["vocabulary"] >> vocabulary;
         ROS_INFO("done");
@@ -208,6 +211,7 @@ std::vector<cv::Mat> BoWRecognition::CalculateImageDescriptors(
 void BoWRecognition::CalculateImageDescriptor(const cv::Mat &image, cv::Mat & descriptor) {
     vector<cv::KeyPoint> keypoints;
     feature_detector_->detect(image, keypoints);
+    ROS_DEBUG("key points size %d", (int)keypoints.size());
     bow_extractor_->compute(image, keypoints, descriptor);
 }
 

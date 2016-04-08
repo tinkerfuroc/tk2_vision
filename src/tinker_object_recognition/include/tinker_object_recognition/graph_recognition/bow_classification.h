@@ -45,6 +45,7 @@ private:
     VocabTrainParams vocab_params_;
     SVMTrainParamsExt svm_params_;
     std::string descriptor_type_;
+    std::string detector_type_;
     std::string matcher_type_;
     std::string image_folder_name;
     std::string vocabulary_filename_;

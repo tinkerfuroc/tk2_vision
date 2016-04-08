@@ -10,9 +10,8 @@ from cv_bridge import CvBridge, CvBridgeError
 
 
 def main(args):
-    rospy.init_node('com_arm_webcam', anonymous=True)
     bridge = CvBridge()
-    if len(args) != 2:
+    if len(args) < 2:
         print 'usage: com_arm_webcam camera_id'
         return
 
@@ -32,4 +31,5 @@ def main(args):
     cap.release()
 
 if __name__ == '__main__':
+    rospy.init_node('com_arm_webcam', anonymous=True)
     main(sys.argv)

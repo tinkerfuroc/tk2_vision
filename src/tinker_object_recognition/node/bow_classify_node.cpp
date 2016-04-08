@@ -27,13 +27,16 @@ public:
           seq_(0),
           new_frame_(false) {
         XmlRpc::XmlRpcValue image_class_info;
-        private_nh_.param("image_class_info", image_class_info);
-        private_nh_.param("vocabulary_file_name", vocabulary_filename_);
+        private_nh_.getParam("image_class_info", image_class_info);
+        private_nh_.getParam("vocabulary_file_name", vocabulary_filename_);
         bow_recognition_ = BoWRecognition(image_class_info);
         bow_recognition_.ReadVocabulary(vocabulary_filename_);
         object_classes = bow_recognition_.GetObjectClasses();
         svms = new CvSVM[object_classes.size()];
         ros::NodeHandle nh;
+        sub_ = nh.subscribe("tk2_com/arm_cam_image", 1, &BoWClassifyNode::ImageCallBack, this);
+        debug_pub_ = private_nh_.advertise<sensor_msgs::Image>("debug_image", 1);
+        pub_ = nh_.advertise<object_recognition_msgs::RecognizedObjectArray>("arm_cam_objects", 1);
         find_object_server_ = nh.advertiseService(
             "arm_find_objects", &BoWClassifyNode::FindObjectService, this);
         for (int i = 0; i < object_classes.size(); i++) {
@@ -53,6 +56,7 @@ public:
         header.frame_id = "hand";
         objects_.header = header;
         if (result_.found) {
+            ROS_INFO("Found %s", result_.name.c_str());
             object_recognition_msgs::RecognizedObject object;
             object.header = header;
             object.type.key = result_.name;
@@ -89,10 +93,15 @@ public:
 
                 for (int i = 0; i < object_classes.size(); i++) {
                     if (svms[i].predict(bow_descriptor) > 0) {
+                        double df_val = svms[i].predict(bow_descriptor, true);
+                        ROS_DEBUG("found df_val %lf for class %s", df_val, 
+                                object_classes[i].c_str());
                         result.name = object_classes[i];
                         positive_count++;
                     }
                 }
+                if (positive_count < 1) ROS_DEBUG("No found pair");
+                if (positive_count > 1) ROS_DEBUG("Too much found pair");
                 result.found = (positive_count == 1);
                 if (result.found) {
                     double center_x = bound.x + bound.width / 2.;
@@ -129,6 +138,7 @@ private:
     ros::Publisher debug_pub_;
     ros::Publisher pub_;
     ros::ServiceServer find_object_server_;
+    ros::Subscriber sub_;
     vector<string> object_classes;
     CvSVM * svms;
     ClassifyResult result_;
