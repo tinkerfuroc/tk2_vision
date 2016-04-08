@@ -150,6 +150,7 @@ int ForegroundDetector::CutForegroundOut(const cv::Mat &source_mat,
                 largest_contour_no = i;
             }
         }
+        bound = cv::boundingRect(contours[largest_contour_no]);
         cv::Mat roi(source_mat, bound);
         roi.copyTo(desk_mat);
         return ForegroundDetector::DETECTED;

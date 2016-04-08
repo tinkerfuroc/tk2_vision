@@ -78,10 +78,9 @@ void ArmCamImgCallback(const sensor_msgs::Image::ConstPtr &msg) {
         cv_bridge::toCvCopy(msg, sensor_msgs::image_encodings::BGR8);
     cv::Mat cam_mat = cv_ptr->image;
     cv::Mat res_mat;
-    
     if(fd.CutForegroundOut(cam_mat, res_mat) == ForegroundDetector::DETECTED)
     {
-        res_mat = HistogramEqualizeRGB(res_mat);
+        //res_mat = HistogramEqualizeRGB(res_mat);
         if (res_mat.cols > 0 && res_mat.rows > 0) {
             cv::imshow("view", res_mat);
             int key = cvWaitKey(100);
@@ -120,6 +119,7 @@ int main(int argc, char **argv) {
 
     object_num = 0;
     std::vector<std::string> subject_name;
+    ROS_INFO("Loading xml");
     try {
         XMLDocument doc;
         doc.LoadFile(xmlfilename.c_str());
@@ -128,6 +128,7 @@ int main(int argc, char **argv) {
         for (XMLElement *object = sample->FirstChildElement("subject"); object;
              object = object->NextSiblingElement()) {
             const XMLAttribute *attributeOfobject = object->FirstAttribute();
+            ROS_INFO("Class %s", attributeOfobject->Value());
             subject_name.push_back(attributeOfobject->Value());
         }
 

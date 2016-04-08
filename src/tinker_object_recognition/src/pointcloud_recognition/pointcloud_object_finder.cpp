@@ -18,7 +18,7 @@ using std::string;
 PointCloudObjectFinder::PointCloudObjectFinder()
     : depth_ready_(false),
       rgb_ready_(false),
-      topic_running_(true),
+      topic_running_(false),
       service_running_(false),
       running_(false),
       private_nh("~/"),
@@ -104,6 +104,7 @@ bool PointCloudObjectFinder::FindObjectService(
         GetRecognizedObjects();
     res.objects = recognized_objects;
     res.success = true;
+    service_running_ = false;
     return true;
 }
 
@@ -183,6 +184,8 @@ void PointCloudObjectFinder::StopSubscribe() {
     }
     depth_ready_ = false;
     rgb_ready_ = false;
+    service_running_ = false;
+    topic_running_ = false;
     running_ = false;
 }
 }
