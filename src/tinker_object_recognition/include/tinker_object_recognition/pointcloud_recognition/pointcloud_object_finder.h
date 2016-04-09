@@ -12,6 +12,7 @@
 #include "tinker_object_recognition/common.h"
 #include <object_recognition_msgs/RecognizedObjectArray.h>
 #include <tinker_object_recognition/FindObjects.h>
+#include <boost/thread/mutex.hpp>
 
 namespace tinker {
 namespace vision {
@@ -58,6 +59,7 @@ private:
     std::string frame_id_;
     int object_seq_;
     int debug_seq_;
+    boost::mutex mutex_;
 };
 }
 }

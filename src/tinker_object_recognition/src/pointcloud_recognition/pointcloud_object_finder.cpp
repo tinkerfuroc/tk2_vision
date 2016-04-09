@@ -58,6 +58,7 @@ bool PointCloudObjectFinder::PendService(std_srvs::Trigger::Request& req,
 
 void PointCloudObjectFinder::DepthCallback(
     const sensor_msgs::Image::ConstPtr& depth_image) {
+    mutex_.lock();
     frame_id_ = depth_image->header.frame_id;
     cv_bridge::CvImagePtr cv_ptr;
     try {
@@ -67,10 +68,12 @@ void PointCloudObjectFinder::DepthCallback(
     }
     depth_image_ = cv_ptr->image;
     depth_ready_ = true;
+    mutex_.unlock();
 }
 
 void PointCloudObjectFinder::RGBCallback(
     const sensor_msgs::Image::ConstPtr& rgb_image) {
+    mutex_.lock();
     cv_bridge::CvImagePtr cv_ptr;
     try {
         cv_ptr = cv_bridge::toCvCopy(rgb_image);
@@ -79,6 +82,7 @@ void PointCloudObjectFinder::RGBCallback(
     }
     rgb_image_ = cv_ptr->image;
     rgb_ready_ = true;
+    mutex_.unlock();
 }
 
 void PointCloudObjectFinder::TimerCallback(const ros::TimerEvent& event) {
@@ -95,16 +99,21 @@ void PointCloudObjectFinder::TimerCallback(const ros::TimerEvent& event) {
 bool PointCloudObjectFinder::FindObjectService(
     tinker_object_recognition::FindObjects::Request& req,
     tinker_object_recognition::FindObjects::Response& res) {
-    if (!running_) StartSubscribe();
+    mutex_.lock();
     service_running_ = true;
+    mutex_.unlock();
+    if (!running_) StartSubscribe();
+    ros::Rate r(5);
     while (!rgb_ready_ || !depth_ready_) {
-        ros::spinOnce();
+        r.sleep();
     }
+    mutex_.lock();
     object_recognition_msgs::RecognizedObjectArray recognized_objects =
         GetRecognizedObjects();
     res.objects = recognized_objects;
     res.success = true;
     service_running_ = false;
+    mutex_.unlock();
     return true;
 }
 
@@ -168,6 +177,7 @@ PointCloudObjectFinder::GetRecognizedObjects() {
 }
 
 void PointCloudObjectFinder::StartSubscribe() {
+    mutex_.lock();
     depth_image_subscribe_ = nh.subscribe(
         depth_topic_name_, 10, &PointCloudObjectFinder::DepthCallback, this);
     rgb_image_subscribe_ = nh.subscribe(
@@ -175,9 +185,13 @@ void PointCloudObjectFinder::StartSubscribe() {
     depth_ready_ = false;
     rgb_ready_ = false;
     running_ = true;
+    mutex_.unlock();
 }
 
 void PointCloudObjectFinder::StopSubscribe() {
+    ros::Rate r(1);
+    while(service_running_) r.sleep();
+    mutex_.lock();
     if (running_) {
         depth_image_subscribe_.shutdown();
         rgb_image_subscribe_.shutdown();
@@ -187,6 +201,7 @@ void PointCloudObjectFinder::StopSubscribe() {
     service_running_ = false;
     topic_running_ = false;
     running_ = false;
+    mutex_.unlock();
 }
 }
 }

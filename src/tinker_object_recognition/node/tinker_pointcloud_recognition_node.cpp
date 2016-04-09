@@ -7,12 +7,13 @@ int main(int argc, char * argv[]) {
     ros::NodeHandle private_nh("~/");
     double rate;
     private_nh.param("rate", rate, 2.);
-    ros::AsyncSpinner spinner(4);
+    ros::AsyncSpinner spinner(0);
     PointCloudObjectFinder finder;
     ros::Timer timer = private_nh.createTimer(ros::Duration(1/rate),
             &PointCloudObjectFinder::TimerCallback,
             &finder);
-    ros::spin();
+    spinner.start();
+    ros::waitForShutdown();
     return 0;
 }
 

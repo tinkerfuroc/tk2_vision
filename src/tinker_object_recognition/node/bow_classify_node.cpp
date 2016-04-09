@@ -5,6 +5,7 @@
 #include <cv_bridge/cv_bridge.h>
 #include <object_recognition_msgs/RecognizedObjectArray.h>
 #include <tinker_object_recognition/FindObjects.h>
+#include <boost/thread/mutex.hpp>
 
 using namespace tinker::vision;
 using std::string;
@@ -51,6 +52,7 @@ public:
     }
 
     void ImageCallBack(const sensor_msgs::Image::ConstPtr &msg) {
+        mutex_.lock();
         cv_bridge::CvImagePtr cv_ptr =
             cv_bridge::toCvCopy(msg, sensor_msgs::image_encodings::BGR8);
         cv::Mat cam_mat = cv_ptr->image;
@@ -71,6 +73,7 @@ public:
         }
         new_frame_ = true;
         pub_.publish(objects_);
+        mutex_.unlock();
     }
 
     ClassifyResult Classify(const cv::Mat &image) {
@@ -134,15 +137,16 @@ public:
             new_frame_ = false;
             ros::Rate r(10);
             while (!new_frame_) {
-                ROS_INFO("waiting for new frame");
-                ros::spinOnce();
+                ROS_DEBUG("waiting for new frame");
                 r.sleep();
             }
+            mutex_.lock();
             if (result_.found) {
                 ROS_INFO("Found %s", result_.name.c_str());
                 found_count[result_.id]++;
                 object_results[result_.id] = objects_;
             }
+            mutex_.unlock();
         }
         int recognized_class_count = 0;
         int recognized_class_id = 0;
@@ -189,11 +193,14 @@ private:
     int sample_count_;
     int accept_count_;
     bool new_frame_;
+    boost::mutex mutex_;
 };
 
 int main(int argc, char *argv[]) {
     ros::init(argc, argv, "arm_bow_classify");
     BoWClassifyNode n;
-    ros::spin();
+    ros::AsyncSpinner spinner(0);
+    spinner.start();
+    ros::waitForShutdown();
     return 0;
 }
