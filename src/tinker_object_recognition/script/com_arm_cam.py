@@ -24,7 +24,7 @@ def main(args):
             if(cap.isOpened()):
                 ret, frame = cap.read()
                 image_pub.publish(bridge.cv2_to_imgmsg(frame, 'bgr8'))
-        except CvBridgeError as e:
+        except Exception as e:
             rospy.logerr(e)
             pass
         rate.sleep()

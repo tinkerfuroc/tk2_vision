@@ -110,6 +110,7 @@ public:
                 if (positive_count > 1) ROS_DEBUG("Too much found pair");
                 result.found = (positive_count == 1);
                 if (result.found) {
+                    ROS_INFO("Found %s", result.name.c_str());
                     double center_x = bound.x + bound.width / 2.;
                     double center_y = bound.y + bound.height / 2.;
                     result.div_x = center_x - image.cols / 2.;
@@ -128,9 +129,15 @@ public:
         vector<int> found_count(object_classes.size(), 0);
         vector<object_recognition_msgs::RecognizedObjectArray> object_results(
             object_classes.size());
+        ROS_INFO("Start find service");
         for (int i = 0; i < sample_count_; i++) {
             new_frame_ = false;
-            while (!new_frame_) ros::spinOnce();
+            ros::Rate r(10);
+            while (!new_frame_) {
+                ROS_INFO("waiting for new frame");
+                ros::spinOnce();
+                r.sleep();
+            }
             if (result_.found) {
                 ROS_INFO("Found %s", result_.name.c_str());
                 found_count[result_.id]++;
@@ -154,8 +161,9 @@ public:
             ROS_INFO("div_x %lf, div_y %lf",
                      res.objects.objects[0].pose.pose.pose.position.x,
                      res.objects.objects[0].pose.pose.pose.position.y);
+            return true;
         }
-        return true;
+        return false;
     }
 
     ~BoWClassifyNode() {

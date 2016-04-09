@@ -36,7 +36,7 @@ namespace vision
         std::vector<pcl::PointIndices> cluster_indices;
         pcl::EuclideanClusterExtraction<pcl::PointXYZRGB> ec;
         ec.setClusterTolerance (0.04); // 4cm
-        ec.setMinClusterSize (200);
+        ec.setMinClusterSize (400);
         ec.setMaxClusterSize (25000);
         ec.setSearchMethod (tree);
         ec.setInputCloud (point_cloud_);

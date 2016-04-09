@@ -137,7 +137,7 @@ PointCloudObjectFinder::GetRecognizedObjects() {
     std_msgs::Header header;
     header.seq = object_seq_++;
     header.stamp = ros::Time::now();
-    header.frame_id = "base_link";
+    header.frame_id = "kinect_link";
     recognized_objects.header = header;
     int i = 0;
     char buf[100];
@@ -162,7 +162,7 @@ PointCloudObjectFinder::GetRecognizedObjects() {
     sensor_msgs::PointCloud2 debug_cloud = ToROSCloud(debug_cloud_);
     debug_cloud.header.seq = debug_seq_++;
     debug_cloud.header.stamp = ros::Time::now();
-    debug_cloud.header.frame_id = "base_link";
+    debug_cloud.header.frame_id = "kinect_link";
     debug_pub_.publish(debug_cloud);
     return recognized_objects;
 }
