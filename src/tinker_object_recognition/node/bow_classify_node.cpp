@@ -133,9 +133,9 @@ public:
         for (int i = 0; i < sample_count_; i++) {
             new_frame_ = false;
             ros::Rate r(10);
-            while (!new_frame_) {
+            for (int j = 0; j < 5; j++) {
                 ROS_INFO("waiting for new frame");
-                ros::spinOnce();
+                if (new_frame_) break;
                 r.sleep();
             }
             if (result_.found) {
@@ -194,6 +194,8 @@ private:
 int main(int argc, char *argv[]) {
     ros::init(argc, argv, "arm_bow_classify");
     BoWClassifyNode n;
-    ros::spin();
+    ros::AsyncSpinner spinner(2);
+    spinner.start();
+    ros::waitForShutdown();
     return 0;
 }
