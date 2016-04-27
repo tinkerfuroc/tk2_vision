@@ -111,7 +111,7 @@ generate_messages(
 catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES tinker_object_recognition
-   CATKIN_DEPENDS object_recognition_msgs roscpp rospy tf
+   CATKIN_DEPENDS object_recognition_msgs roscpp rospy tf message_runtime
 #  DEPENDS system_lib
 )
 
@@ -148,7 +148,6 @@ SET(SRC_FILE
     src/pointcloud_recognition/pointcloud_object_finder.cpp
     src/arm_target_finder/ForegroundDetector.cpp
     src/utilities.cpp
-    src/tinyxml2.cpp
     
 )
 
@@ -168,7 +167,7 @@ add_executable(tinker_pointcloud_recognition_node
     ${SRC_FILE}
 )
 
-add_executable(collect_sample_node node/CollectSample.cpp ${SRC_FILE})
+add_executable(collect_sample_node ./node/collect_sample_node.cpp ${SRC_FILE})
 add_executable(bow_train_node ./node/bow_train_node.cpp ${SRC_FILE})
 add_executable(bow_classify_node ./node/bow_classify_node.cpp ${SRC_FILE})
 
