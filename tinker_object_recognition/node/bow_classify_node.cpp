@@ -4,7 +4,7 @@
 #include <sensor_msgs/Image.h>
 #include <cv_bridge/cv_bridge.h>
 #include <object_recognition_msgs/RecognizedObjectArray.h>
-#include <tinker_object_recognition/FindObjects.h>
+#include <tinker_vision_msgs/FindObjects.h>
 #include <boost/thread/mutex.hpp>
 
 using namespace tinker::vision;
@@ -127,8 +127,8 @@ public:
     }
 
     bool FindObjectService(
-        tinker_object_recognition::FindObjects::Request &req,
-        tinker_object_recognition::FindObjects::Response &res) {
+        tinker_vision_msgs::FindObjects::Request &req,
+        tinker_vision_msgs::FindObjects::Response &res) {
         vector<int> found_count(object_classes.size(), 0);
         vector<object_recognition_msgs::RecognizedObjectArray> object_results(
             object_classes.size());

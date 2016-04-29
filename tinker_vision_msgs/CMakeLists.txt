@@ -1,26 +1,14 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(tinker_object_recognition)
+project(tinker_vision_msgs)
 
-# Find catkin macros and libraries
-# if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
-# is used, also find other catkin packages
-
-FIND_PACKAGE(OpenCV REQUIRED)
-find_package(PCL 1.7 REQUIRED)
-
+## Find catkin macros and libraries
+## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
+## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
+  geometry_msgs
   object_recognition_msgs
-  image_transport
-  cv_bridge
   sensor_msgs
-  roscpp
-  rospy
-  tf
-  message_generation
-  tinker_camera
-  tinker_vision_msgs
 )
-
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
@@ -63,23 +51,23 @@ find_package(catkin REQUIRED COMPONENTS
 # )
 
 ## Generate services in the 'srv' folder
-#add_service_files(
-#  FILES
-#  FindObjects.srv
-#)
-#
-### Generate actions in the 'action' folder
-## add_action_files(
-##   FILES
-##   Action1.action
-##   Action2.action
-## )
-#
-### Generate added messages and services with any dependencies listed here
-#generate_messages(
-#  DEPENDENCIES
-#  object_recognition_msgs
-#)
+add_service_files(
+  FILES
+  FindObjects.srv
+)
+
+## Generate actions in the 'action' folder
+# add_action_files(
+#   FILES
+#   Action1.action
+#   Action2.action
+# )
+
+## Generate added messages and services with any dependencies listed here
+generate_messages(
+  DEPENDENCIES
+  geometry_msgs   object_recognition_msgs   sensor_msgs
+)
 
 ################################################
 ## Declare ROS dynamic reconfigure parameters ##
@@ -111,10 +99,10 @@ find_package(catkin REQUIRED COMPONENTS
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
-    INCLUDE_DIRS include
-#  LIBRARIES tinker_object_recognition
-   CATKIN_DEPENDS object_recognition_msgs roscpp rospy tf message_runtime tinker_camera tinker_vision_msgs
-#  DEPENDS system_lib
+    #INCLUDE_DIRS include
+  #LIBRARIES tinker_vision_msgs
+  CATKIN_DEPENDS geometry_msgs object_recognition_msgs sensor_msgs
+  DEPENDS system_lib
 )
 
 ###########
@@ -125,81 +113,31 @@ catkin_package(
 ## Your package locations should be listed before other locations
 # include_directories(include)
 include_directories(
-    include
-    ${catkin_INCLUDE_DIRS}
-    ${OpenCV_INCLUDE_DIRS}
-    ${PCL_INCLUDE_DIRS}
-)
-
-LINK_DIRECTORIES(
-  ${PCL_LIBRARY_DIRS}
-)
-
-ADD_DEFINITIONS(
-  ${PCL_DEFINITIONS}
-)
-
-SET(SRC_FILE
-    src/graph_filter/ColorFixer.cpp
-    src/graph_filter/filters.cpp
-    src/graph_recognition/bow_data.cpp
-    src/graph_recognition/bow_parameter.cpp
-    src/graph_recognition/bow_classification.cpp
-    src/pointcloud_recognition/ClusterDivider.cpp
-    src/pointcloud_recognition/pointcloud_object_finder.cpp
-    src/arm_target_finder/ForegroundDetector.cpp
-    src/utilities.cpp
-    
+  ${catkin_INCLUDE_DIRS}
 )
 
 ## Declare a C++ library
-# add_library(tinker_object_recognition
-#   src/${PROJECT_NAME}/tinker_object_recognition.cpp
+# add_library(tinker_vision_msgs
+#   src/${PROJECT_NAME}/tinker_vision_msgs.cpp
 # )
 
 ## Add cmake target dependencies of the library
 ## as an example, code may need to be generated before libraries
 ## either from message generation or dynamic reconfigure
-# add_dependencies(tinker_object_recognition ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+# add_dependencies(tinker_vision_msgs ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
-# Declare a C++ executable
-add_executable(tinker_pointcloud_recognition_node 
-    node/tinker_pointcloud_recognition_node.cpp
-    ${SRC_FILE}
-)
-
-add_executable(collect_sample_node ./node/collect_sample_node.cpp ${SRC_FILE})
-add_executable(bow_train_node ./node/bow_train_node.cpp ${SRC_FILE})
-add_executable(bow_classify_node ./node/bow_classify_node.cpp ${SRC_FILE})
+## Declare a C++ executable
+# add_executable(tinker_vision_msgs_node src/tinker_vision_msgs_node.cpp)
 
 ## Add cmake target dependencies of the executable
 ## same as for the library above
-# add_dependencies(tinker_object_recognition_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+# add_dependencies(tinker_vision_msgs_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Specify libraries to link a library or executable target against
-target_link_libraries(tinker_pointcloud_recognition_node
-    ${catkin_LIBRARIES}
-    ${OpenCV_LIBS}
-    ${PCL_LIBRARIES}
-)
+# target_link_libraries(tinker_vision_msgs_node
+#   ${catkin_LIBRARIES}
+# )
 
-target_link_libraries(collect_sample_node 
-    ${catkin_LIBRARIES}
-    ${OpenCV_LIBS}
-    ${PCL_LIBRARIES}
-)
-
-target_link_libraries(bow_train_node
-    ${catkin_LIBRARIES}
-    ${OpenCV_LIBS}
-    ${PCL_LIBRARIES}
-)
-
-target_link_libraries(bow_classify_node
-    ${catkin_LIBRARIES}
-    ${OpenCV_LIBS}
-    ${PCL_LIBRARIES}
-)
 #############
 ## Install ##
 #############
@@ -215,7 +153,7 @@ target_link_libraries(bow_classify_node
 # )
 
 ## Mark executables and/or libraries for installation
-# install(TARGETS tinker_object_recognition tinker_object_recognition_node
+# install(TARGETS tinker_vision_msgs tinker_vision_msgs_node
 #   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
 #   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
 #   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
@@ -240,7 +178,7 @@ target_link_libraries(bow_classify_node
 #############
 
 ## Add gtest based cpp test target and link libraries
-# catkin_add_gtest(${PROJECT_NAME}-test test/test_tinker_object_recognition.cpp)
+# catkin_add_gtest(${PROJECT_NAME}-test test/test_tinker_vision_msgs.cpp)
 # if(TARGET ${PROJECT_NAME}-test)
 #   target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME})
 # endif()

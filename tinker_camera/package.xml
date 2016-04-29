@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <package>
-  <name>tinker_object_recognition</name>
+  <name>tinker_camera</name>
   <version>0.0.0</version>
-  <description>The tinker_object_recognition package</description>
+  <description>The tinker_camera package</description>
 
   <!-- One maintainer tag required, multiple allowed, one person per tag --> 
   <!-- Example:  -->
@@ -19,7 +19,7 @@
   <!-- Url tags are optional, but mutiple are allowed, one per tag -->
   <!-- Optional attribute type can be: website, bugtracker, or repository -->
   <!-- Example: -->
-  <!-- <url type="website">http://wiki.ros.org/tinker_object_recognition</url> -->
+  <!-- <url type="website">http://wiki.ros.org/tinker_camera</url> -->
 
 
   <!-- Author tags are optional, mutiple are allowed, one per tag -->
@@ -40,20 +40,14 @@
   <!-- Use test_depend for packages you need only for testing: -->
   <!--   <test_depend>gtest</test_depend> -->
   <buildtool_depend>catkin</buildtool_depend>
-  <build_depend>object_recognition_msgs</build_depend>
   <build_depend>roscpp</build_depend>
   <build_depend>rospy</build_depend>
-  <build_depend>tf</build_depend>
-  <build_depend>message_generation</build_depend>
-  <build_depend>tinker_camera</build_depend>
-  <build_depend>tinker_vision_msgs</build_depend>
-  <run_depend>message_runtime</run_depend>
-  <run_depend>object_recognition_msgs</run_depend>
+  <build_depend>object_recognition_msgs</build_depend>
+  <build_depend>sensor_msgs</build_depend>
   <run_depend>roscpp</run_depend>
   <run_depend>rospy</run_depend>
-  <run_depend>tinker_camera</run_depend>
-  <run_depend>tinker_vision_msgs</run_depend>
-  <run_depend>tf</run_depend>
+  <run_depend>sensor_msgs</run_depend>
+  <run_depend>message_runtime</run_depend>
 
 
   <!-- The export tag contains other, unspecified, tags -->

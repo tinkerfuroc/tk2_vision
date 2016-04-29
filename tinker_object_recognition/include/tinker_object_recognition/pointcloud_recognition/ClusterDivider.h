@@ -1,5 +1,5 @@
-#ifndef __CLUSTER_DIVIDER_H__
-#define __CLUSTER_DIVIDER_H__
+#ifndef __TINKER_OBJECT_RECOGNITION_CLUSTER_DIVIDER_H__
+#define __TINKER_OBJECT_RECOGNITION_CLUSTER_DIVIDER_H__
 
 #include "opencv2/opencv.hpp"
 #include "tinker_object_recognition/common.h"

@@ -1,6 +1,6 @@
 #include "tinker_object_recognition/pointcloud_recognition/pointcloud_object_finder.h"
 #include "tinker_object_recognition/pointcloud_recognition/ClusterDivider.h"
-#include "tinker_object_recognition/pointcloud_rebuild/pointcloud_builder.h"
+#include "tinker_camera/pointcloud_builder.h"
 #include "tinker_object_recognition/graph_filter/ColorFixer.h"
 #include "tinker_object_recognition/graph_filter/filters.h"
 #include "tinker_object_recognition/utilities.h"
@@ -8,6 +8,7 @@
 #include <boost/foreach.hpp>
 #include <sensor_msgs/PointCloud2.h>
 #include <cv_bridge/cv_bridge.h>
+#include <sensor_msgs/Image.h>
 
 namespace tinker {
 namespace vision {
@@ -97,8 +98,8 @@ void PointCloudObjectFinder::TimerCallback(const ros::TimerEvent& event) {
 }
 
 bool PointCloudObjectFinder::FindObjectService(
-    tinker_object_recognition::FindObjects::Request& req,
-    tinker_object_recognition::FindObjects::Response& res) {
+    tinker_vision_msgs::FindObjects::Request& req,
+    tinker_vision_msgs::FindObjects::Response& res) {
     mutex_.lock();
     service_running_ = true;
     mutex_.unlock();

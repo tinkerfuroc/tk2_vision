@@ -11,7 +11,7 @@
 #include <std_srvs/Trigger.h>
 #include "tinker_object_recognition/common.h"
 #include <object_recognition_msgs/RecognizedObjectArray.h>
-#include <tinker_object_recognition/FindObjects.h>
+#include <tinker_vision_msgs/FindObjects.h>
 #include <boost/thread/mutex.hpp>
 
 namespace tinker {
@@ -29,8 +29,8 @@ public:
     bool PendService(std_srvs::Trigger::Request& req,
                      std_srvs::Trigger::Response& res);
     bool FindObjectService(
-        tinker_object_recognition::FindObjects::Request& req,
-        tinker_object_recognition::FindObjects::Response& res);
+        tinker_vision_msgs::FindObjects::Request& req,
+        tinker_vision_msgs::FindObjects::Response& res);
     void TimerCallback(const ros::TimerEvent& event);
 
 private:
