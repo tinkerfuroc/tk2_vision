@@ -1,0 +1,5 @@
+<launch>
+    <node pkg="tinker_object_recognition" type="bow_classify_service_node" name="bow_classify_service_node" output="screen">
+        <rosparam command="load" file="$(find tinker_object_recognition)/param/frame_acceptance.yaml"/>
+    </node>
+</launch>

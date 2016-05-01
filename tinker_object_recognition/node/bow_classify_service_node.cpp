@@ -15,9 +15,8 @@ typedef actionlib::SimpleActionClient<tinker_vision_msgs::ObjectAction> Client;
 class BoWClassifyClientNode {
 public:
     BoWClassifyClientNode() 
-        : ac_("find_object_client", true),
-        private_nh_("~") {
-        
+        :   private_nh_("~"),
+            ac_("find_object", true) {
         private_nh_.param("sample_count", sample_count_, 10);
         private_nh_.param("accept_count", accept_count_, 5);
         ROS_INFO("Waiting for action server to start.");

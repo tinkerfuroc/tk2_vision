@@ -28,7 +28,7 @@ public:
           svms(NULL),
           debug_seq_(0),
           seq_(0),
-          as_(nh_, "find_object_server", false) {
+          as_(nh_, "find_object", false) {
         XmlRpc::XmlRpcValue image_class_info;
         private_nh_.getParam("image_class_info", image_class_info);
         private_nh_.getParam("vocabulary_file_name", vocabulary_filename_);
@@ -36,8 +36,7 @@ public:
         bow_recognition_.ReadVocabulary(vocabulary_filename_);
         object_classes = bow_recognition_.GetObjectClasses();
         svms = new CvSVM[object_classes.size()];
-        ros::NodeHandle nh;
-        sub_ = nh.subscribe("tk2_com/arm_cam_image", 1,
+        sub_ = nh_.subscribe("tk2_com/arm_cam_image", 1,
                             &BoWClassifyServerNode::ImageCallBack, this);
         pub_ = nh_.advertise<object_recognition_msgs::RecognizedObjectArray>(
             "arm_cam_objects", 1);
@@ -47,7 +46,14 @@ public:
         }
         as_.registerGoalCallback(boost::bind(&BoWClassifyServerNode::goalCB, this));
         as_.registerPreemptCallback(boost::bind(&BoWClassifyServerNode::preemptCB, this));
-        as_.start();
+        try
+        {
+            as_.start();
+        }
+        catch(...)
+        {
+            ROS_ERROR("server start failed =_=");
+        }
     }
 
     void goalCB()
@@ -67,7 +73,10 @@ public:
 
     void ImageCallBack(const sensor_msgs::Image::ConstPtr &msg) {
         if (!as_.isActive()) 
+        {
+            //ROS_ERROR("action server is not active =.=");
             return;
+        }
         cv_bridge::CvImagePtr cv_ptr =
             cv_bridge::toCvCopy(msg, sensor_msgs::image_encodings::BGR8);
         cv::Mat cam_mat = cv_ptr->image;
@@ -200,6 +209,6 @@ private:
 int main(int argc, char *argv[]) {
     ros::init(argc, argv, "arm_bow_classify_server");
     BoWClassifyServerNode n;
-    ros::waitForShutdown();
+    ros::spin();
     return 0;
 }
