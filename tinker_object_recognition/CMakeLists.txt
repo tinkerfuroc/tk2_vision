@@ -170,7 +170,7 @@ add_executable(tinker_pointcloud_recognition_node
 
 add_executable(collect_sample_node ./node/collect_sample_node.cpp ${SRC_FILE})
 add_executable(bow_train_node ./node/bow_train_node.cpp ${SRC_FILE})
-add_executable(bow_classify_node ./node/bow_classify_node.cpp ${SRC_FILE})
+#add_executable(bow_classify_node ./node/bow_classify_node.cpp ${SRC_FILE})
 
 ## Add cmake target dependencies of the executable
 ## same as for the library above
@@ -189,17 +189,9 @@ target_link_libraries(collect_sample_node
     ${PCL_LIBRARIES}
 )
 
-target_link_libraries(bow_train_node
-    ${catkin_LIBRARIES}
-    ${OpenCV_LIBS}
-    ${PCL_LIBRARIES}
-)
+target_link_libraries(bow_train_node ${catkin_LIBRARIES} ${OpenCV_LIBS} ${PCL_LIBRARIES})
+#target_link_libraries(bow_classify_node ${catkin_LIBRARIES} ${OpenCV_LIBS} ${PCL_LIBRARIES})
 
-target_link_libraries(bow_classify_node
-    ${catkin_LIBRARIES}
-    ${OpenCV_LIBS}
-    ${PCL_LIBRARIES}
-)
 #############
 ## Install ##
 #############
