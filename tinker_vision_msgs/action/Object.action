@@ -1,0 +1,10 @@
+#goal definition
+int32 sample_count
+int32 accept_count
+---
+#result definition
+bool success   # indicate successful run of triggered service
+object_recognition_msgs/RecognizedObjectArray objects  # Recognized objects
+---
+#feedback
+sensor_msgs/Image handimg

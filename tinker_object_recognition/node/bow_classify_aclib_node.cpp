@@ -54,7 +54,7 @@ public:
     {
         found_count_ = vector<int>(object_classes.size(), 0);
         object_results_ = vector<object_recognition_msgs::RecognizedObjectArray>(object_classes.size());
-        tinker_object_recognition::ObjectGoalConstPtr goal = as_.acceptNewGoal(); 
+        tinker_vision_msgs::ObjectGoalConstPtr goal = as_.acceptNewGoal(); 
         sample_count_ = goal->sample_count;
         accept_count_ = goal->accept_count;
         count_ = sample_count_;
@@ -192,9 +192,9 @@ private:
     int accept_count_;
     vector<int> found_count_;
     vector<object_recognition_msgs::RecognizedObjectArray> object_results_;
-    actionlib::SimpleActionServer<tinker_object_recognition::ObjectAction> as_;
-    tinker_object_recognition::ObjectFeedback act_feedback_;
-    tinker_object_recognition::ObjectResult act_result_;
+    actionlib::SimpleActionServer<tinker_vision_msgs::ObjectAction> as_;
+    tinker_vision_msgs::ObjectFeedback act_feedback_;
+    tinker_vision_msgs::ObjectResult act_result_;
 };
 
 int main(int argc, char *argv[]) {

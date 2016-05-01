@@ -1,20 +1,15 @@
-#include "tinker_object_recognition/graph_recognition/bow_classification.h"
-#include "tinker_object_recognition/arm_target_finder/ForegroundDetector.h"
 #include <ros/ros.h>
-#include <sensor_msgs/Image.h>
-#include <cv_bridge/cv_bridge.h>
 #include <object_recognition_msgs/RecognizedObjectArray.h>
-#include <boost/thread/mutex.hpp>
 #include <tinker_vision_msgs/ObjectAction.h>
 #include <actionlib/client/simple_action_client.h>
 #include <actionlib/client/terminal_state.h>
 #include <tinker_vision_msgs/FindObjects.h>
 
-using namespace tinker::vision;
+//using namespace tinker::vision;
 using std::string;
 using std::vector;
 
-typedef actionlib::SimpleActionClient<tinker_object_recognition::ObjectAction> Client;
+typedef actionlib::SimpleActionClient<tinker_vision_msgs::ObjectAction> Client;
 
 
 class BoWClassifyClientNode {
@@ -33,16 +28,16 @@ public:
     }
     
     void doneCB(const actionlib::SimpleClientGoalState& state,
-              const tinker_object_recognition::ObjectResultConstPtr& result)
+              const tinker_vision_msgs::ObjectResultConstPtr& result)
     {
         res_.success = result->success;
         res_.objects = result->objects;
     }
     
     bool FindObjectService(
-        tinker_object_recognition::FindObjects::Request &req,
-        tinker_object_recognition::FindObjects::Response &res) {
-        tinker_object_recognition::FindObjectGoal goal;
+        tinker_vision_msgs::FindObjects::Request &req,
+        tinker_vision_msgs::FindObjects::Response &res) {
+        tinker_vision_msgs::ObjectGoal goal;
         goal.sample_count = sample_count_;
         goal.accept_count = accept_count_;
         ac_.sendGoal(goal,
@@ -68,7 +63,7 @@ private:
     Client ac_;
     int sample_count_;
     int accept_count_;
-    tinker_object_recognition::FindObjects::Response res_;
+    tinker_vision_msgs::FindObjects::Response res_;
 };
 
 int main(int argc, char *argv[]) {
