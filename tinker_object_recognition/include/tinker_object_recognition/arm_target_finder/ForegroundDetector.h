@@ -17,8 +17,7 @@ namespace vision {
 
 class ForegroundDetector {
 public:
-    ForegroundDetector(int filter_size, double entropy_threshold)
-        : filter_size_(filter_size), entropy_threshold_(entropy_threshold) {}
+    ForegroundDetector(ros::NodeHandle private_nh_) {setParam(private_nh_);}
 
     // Filter the picture and paint the background with black color
     // all black if nothing detected
@@ -32,6 +31,22 @@ public:
                          
     const static int DETECTED = 0;
     const static int NOT_DETECTED = -1;
+    
+    void setParam(ros::NodeHandle private_nh_)
+    {
+        XmlRpc::XmlRpcValue foreground_detector_param;
+        private_nh_.getParam("foreground_detector_param", foreground_detector_param);
+        ROS_ASSERT(foreground_detector_param.size() > 0);
+        ROS_ASSERT(foreground_detector_param.hasMember("filter_size"));
+        ROS_ASSERT(foreground_detector_param.hasMember("entropy_threshold"));
+        ROS_ASSERT(foreground_detector_param.hasMember("max_aspect_ratio_tolerance"));
+        ROS_ASSERT(foreground_detector_param["filter_size"].getType() == XmlRpc::XmlRpcValue::TypeInt);
+        ROS_ASSERT(foreground_detector_param["entropy_threshold"].getType() == XmlRpc::XmlRpcValue::TypeDouble);
+        ROS_ASSERT(foreground_detector_param["max_aspect_ratio_tolerance"].getType() == XmlRpc::XmlRpcValue::TypeDouble);
+        filter_size_ = (int)foreground_detector_param["filter_size"];
+        entropy_threshold_ = (double)foreground_detector_param["entropy_threshold"];
+        max_aspect_ratio_tolerance_ = (double)foreground_detector_param["max_aspect_ratio_tolerance"];
+    }
 
 private:
     // processes.
@@ -44,6 +59,7 @@ private:
     // parameters.
     int filter_size_;
     double entropy_threshold_;
+    double max_aspect_ratio_tolerance_;
 };
 }
 }

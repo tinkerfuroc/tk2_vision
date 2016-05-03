@@ -9,7 +9,7 @@ def bow_client():
     try:
         find_objects = rospy.ServiceProxy('arm_find_objects', FindObjects)
         response = find_objects()
-        print response
+        #print response
         if response.success:
             print response.objects.objects[0].type.key
         else:
@@ -20,4 +20,5 @@ def bow_client():
 
 if __name__ == "__main__":
     print "Requesting"
-    bow_client()
+    while not rospy.is_shutdown():
+        bow_client()

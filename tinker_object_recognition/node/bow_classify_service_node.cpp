@@ -17,8 +17,15 @@ public:
     BoWClassifyClientNode() 
         :   private_nh_("~"),
             ac_("find_object", true) {
-        private_nh_.param("sample_count", sample_count_, 10);
-        private_nh_.param("accept_count", accept_count_, 5);
+        XmlRpc::XmlRpcValue frame_acceptance;
+        private_nh_.getParam("frame_acceptance", frame_acceptance);
+        ROS_ASSERT(frame_acceptance.size() > 0);
+        ROS_ASSERT(frame_acceptance.hasMember("sample_count"));
+        ROS_ASSERT(frame_acceptance["sample_count"].getType() == XmlRpc::XmlRpcValue::TypeInt);
+        ROS_ASSERT(frame_acceptance.hasMember("accept_count"));
+        ROS_ASSERT(frame_acceptance["accept_count"].getType() == XmlRpc::XmlRpcValue::TypeInt);
+        sample_count_ = (int)frame_acceptance["sample_count"];
+        accept_count_ = (int)frame_acceptance["accept_count"];
         ROS_INFO("Waiting for action server to start.");
         ac_.waitForServer();
         ROS_INFO("Action server started, sending goal.");

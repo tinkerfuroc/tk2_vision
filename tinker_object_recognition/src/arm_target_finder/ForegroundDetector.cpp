@@ -144,20 +144,27 @@ int ForegroundDetector::CutForegroundOut(const cv::Mat &source_mat,
         double largest_area = 0.0;
         int largest_contour_no = -1;
         for (int i = 0; i < contours.size(); i++) {
-            double a = cv::contourArea(contours[i], false);
-            if (a > largest_area) {
-                largest_area = a;
-                largest_contour_no = i;
+            cv::Rect contourbound = cv::boundingRect(contours[i]);
+            double ar = (double)contourbound.width / (double)contourbound.height;
+            if(ar > 1/max_aspect_ratio_tolerance_ 
+                && ar < max_aspect_ratio_tolerance_)
+            {
+                double a = cv::contourArea(contours[i], false);
+                if (a > largest_area) {
+                    largest_area = a;
+                    largest_contour_no = i;
+                    bound = contourbound;
+                }
             }
         }
-        bound = cv::boundingRect(contours[largest_contour_no]);
-        cv::Mat roi(source_mat, bound);
-        roi.copyTo(desk_mat);
-        return ForegroundDetector::DETECTED;
-    } else {
-        // no contour
-        return ForegroundDetector::NOT_DETECTED;
+        if(largest_contour_no >= 0)
+        {
+            cv::Mat roi(source_mat, bound);
+            roi.copyTo(desk_mat);
+            return ForegroundDetector::DETECTED;
+        }
     }
+    return ForegroundDetector::NOT_DETECTED;
 }
 }
 }

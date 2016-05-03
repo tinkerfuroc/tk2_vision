@@ -24,7 +24,7 @@ class BoWClassifyServerNode {
 public:
     BoWClassifyServerNode()
         : private_nh_("~"),
-          detector_(8, 0.265),
+          detector_(private_nh_),
           svms(NULL),
           debug_seq_(0),
           seq_(0),
@@ -199,8 +199,14 @@ private:
     int count_;
     int sample_count_;
     int accept_count_;
+    
+    double entropy_threshold_;
+    int filter_size_;
+    float max_aspect_ratio_tolerance_;
+    
     vector<int> found_count_;
     vector<object_recognition_msgs::RecognizedObjectArray> object_results_;
+    
     actionlib::SimpleActionServer<tinker_vision_msgs::ObjectAction> as_;
     tinker_vision_msgs::ObjectFeedback act_feedback_;
     tinker_vision_msgs::ObjectResult act_result_;

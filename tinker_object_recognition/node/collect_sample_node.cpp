@@ -24,7 +24,7 @@ class Collector
 {
 public:
     Collector() 
-        :private_nh_("~"), fd_(8, 0.265), listfilename("list.txt"), 
+        :private_nh_("~"), fd_(private_nh_), listfilename("list.txt"), 
          finished_(false), class_counter_(0), no_counter_(0) {
         init();
     }
