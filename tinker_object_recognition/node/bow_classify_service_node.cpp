@@ -31,6 +31,14 @@ public:
     {
         res_.success = result->success;
         res_.objects = result->objects;
+        if(res_.success)
+        {
+            ROS_INFO("found %s", res_.objects.objects[0].type.key.c_str());
+        }
+        else
+        {
+            ROS_INFO("found nothing");
+        }
     }
     
     bool FindObjectService(
