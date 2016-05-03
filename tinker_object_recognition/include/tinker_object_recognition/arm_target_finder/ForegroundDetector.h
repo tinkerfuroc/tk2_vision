@@ -17,7 +17,7 @@ namespace vision {
 
 class ForegroundDetector {
 public:
-    ForegroundDetector(ros::NodeHandle private_nh_) {setParam(private_nh_);}
+    ForegroundDetector() {}
 
     // Filter the picture and paint the background with black color
     // all black if nothing detected

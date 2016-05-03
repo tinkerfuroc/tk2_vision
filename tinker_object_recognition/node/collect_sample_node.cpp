@@ -24,12 +24,13 @@ class Collector
 {
 public:
     Collector() 
-        :private_nh_("~"), fd_(private_nh_), listfilename("list.txt"), 
+        :private_nh_("~"), fd_(), listfilename("list.txt"), 
          finished_(false), class_counter_(0), no_counter_(0) {
         init();
     }
     
     void init() {
+        fd_.setParam(private_nh_);
         private_nh_.getParam("filepath", filepath_);
         ROS_ASSERT(filepath_.size() > 0);
         string listfilepath = filepath_ + "/" + listfilename;

@@ -24,11 +24,12 @@ class BoWClassifyServerNode {
 public:
     BoWClassifyServerNode()
         : private_nh_("~"),
-          detector_(private_nh_),
+          detector_(),
           svms(NULL),
           debug_seq_(0),
           seq_(0),
           as_(nh_, "find_object", false) {
+        detector_.setParam(private_nh_);
         XmlRpc::XmlRpcValue image_class_info;
         private_nh_.getParam("image_class_info", image_class_info);
         private_nh_.getParam("vocabulary_file_name", vocabulary_filename_);
