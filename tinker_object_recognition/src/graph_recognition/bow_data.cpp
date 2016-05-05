@@ -1,5 +1,6 @@
 #include "tinker_object_recognition/graph_recognition/bow_data.h"
 #include <ros/ros.h>
+#include <opencv2/core/core.hpp>
 #include <sys/stat.h>
 #include <iostream>
 #include <fstream>
@@ -56,11 +57,45 @@ void BoWData::GetClassImages(const string& obj_class,
                              const ObdDatasetType dataset,
                              vector<ObdImage>& images,
                              vector<char>& object_present) {
-    for (int i = 0; i < images_.size(); i++) {
-        ObdImage o = images_[i];
-        images.push_back(o);
-        object_present.push_back(o.classname == obj_class);
+                             
+    if(obj_class != "")
+    {
+        // keep balanced
+        cv::RNG& rng = cv::theRNG();
+        int balance_cnt = 0;
+        vector<ObdImage> neg_images;
+        for (int i = 0; i < images_.size(); i++) {
+            ObdImage o = images_[i];
+            if(o.classname == obj_class) 
+            {
+                balance_cnt++;
+                images.push_back(o);
+                object_present.push_back(o.classname == obj_class);
+            }
+            else
+            {
+                neg_images.push_back(o);
+            }
+        }
+        ROS_ASSERT(images_.size() >= 2*balance_cnt);
+        for (int i=0; i<balance_cnt; i++)
+        {
+            int randImgIdx = rng((unsigned)neg_images.size());
+            ObdImage o = neg_images[randImgIdx];
+            images.push_back(o);
+            object_present.push_back(o.classname == obj_class);
+            neg_images.erase(neg_images.begin() + randImgIdx);
+        }
     }
+    else
+    {
+        for (int i = 0; i < images_.size(); i++) {
+            ObdImage o = images_[i];
+            images.push_back(o);
+            object_present.push_back(o.classname == obj_class);
+        }
+    }
+    
 }
 
 }
