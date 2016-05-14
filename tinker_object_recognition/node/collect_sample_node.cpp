@@ -24,17 +24,13 @@ class Collector
 {
 public:
     Collector() 
-        :private_nh_("~"), fd_(), listfilename("list.txt"), 
+        :private_nh_("~"), fd_(), 
          finished_(false), class_counter_(0), no_counter_(0) {
         init();
     }
     
     void init() {
         fd_.setParam(private_nh_);
-        private_nh_.getParam("filepath", filepath_);
-        ROS_ASSERT(filepath_.size() > 0);
-        string listfilepath = filepath_ + "/" + listfilename;
-        listfile_.open(listfilepath.c_str());
         //read param
         XmlRpc::XmlRpcValue image_class_info;
         private_nh_.getParam("image_class_info", image_class_info);
@@ -44,7 +40,8 @@ public:
         ROS_ASSERT(image_class_info.hasMember("image_folder_name"));
         ROS_ASSERT(image_class_info["image_num"].getType() == XmlRpc::XmlRpcValue::TypeInt);
         ROS_ASSERT(image_class_info["object_classes"].getType() == XmlRpc::XmlRpcValue::TypeArray);
-        string image_dir = image_class_info["image_folder_name"];
+        filepath_ = std::string(image_class_info["image_folder_name"]);
+        ROS_ASSERT(filepath_.size() > 0);
         object_num_ = (int)image_class_info["image_num"];
         XmlRpc::XmlRpcValue object_classes = image_class_info["object_classes"];
         for (int i = 0 ; i < object_classes.size(); i++) {
@@ -79,7 +76,6 @@ public:
                         compression_params.push_back(CV_IMWRITE_PNG_COMPRESSION);
                         compression_params.push_back(9);
                         imwrite(filepath, res_mat, compression_params);
-                        listfile_ << filename << endl;
                         ROS_INFO("%s saved", filename.c_str());
                         //next object
                         no_counter_++;
@@ -116,9 +112,7 @@ private:
     ros::NodeHandle nh_;
     ros::Subscriber sub_;
     
-    ofstream listfile_;
     string filepath_;
-    string listfilename;
     
     int no_counter_;
     int class_counter_;

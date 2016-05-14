@@ -4,6 +4,7 @@
 #include <actionlib/client/simple_action_client.h>
 #include <actionlib/client/terminal_state.h>
 #include <tinker_vision_msgs/FindObjects.h>
+#include <sensor_msgs/Image.h>
 
 //using namespace tinker::vision;
 using std::string;
@@ -26,6 +27,7 @@ public:
         ROS_ASSERT(frame_acceptance["accept_count"].getType() == XmlRpc::XmlRpcValue::TypeInt);
         sample_count_ = (int)frame_acceptance["sample_count"];
         accept_count_ = (int)frame_acceptance["accept_count"];
+        pub_ = nh_.advertise<sensor_msgs::Image>("tk2_vision/dbg_handimg", 1);
         ROS_INFO("Waiting for action server to start.");
         ac_.waitForServer();
         ROS_INFO("Action server started, sending goal.");
@@ -48,6 +50,17 @@ public:
         }
     }
     
+    void activeCB()
+    {
+      ;
+    }
+
+    // Called every time feedback is received for the goal
+    void feedbackCB(const tinker_vision_msgs::ObjectFeedbackConstPtr& feedback)
+    {
+      pub_.publish(feedback->handimg);
+    }
+    
     bool FindObjectService(
         tinker_vision_msgs::FindObjects::Request &req,
         tinker_vision_msgs::FindObjects::Response &res) {
@@ -55,7 +68,9 @@ public:
         goal.sample_count = sample_count_;
         goal.accept_count = accept_count_;
         ac_.sendGoal(goal,
-                boost::bind(&BoWClassifyClientNode::doneCB, this, _1, _2));
+                boost::bind(&BoWClassifyClientNode::doneCB, this, _1, _2),
+                boost::bind(&BoWClassifyClientNode::activeCB, this),
+                boost::bind(&BoWClassifyClientNode::feedbackCB, this, _1));
         bool finished_before_timeout = ac_.waitForResult(ros::Duration(30.0));
         if (finished_before_timeout)
         {
@@ -75,6 +90,7 @@ private:
     ros::NodeHandle private_nh_;
     ros::ServiceServer find_object_server_;
     Client ac_;
+    ros::Publisher pub_;
     int sample_count_;
     int accept_count_;
     tinker_vision_msgs::FindObjects::Response res_;
