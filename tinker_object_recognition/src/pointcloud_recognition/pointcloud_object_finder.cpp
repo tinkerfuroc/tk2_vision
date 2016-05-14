@@ -59,7 +59,9 @@ bool PointCloudObjectFinder::PendService(std_srvs::Trigger::Request& req,
 
 void PointCloudObjectFinder::DepthCallback(
     const sensor_msgs::Image::ConstPtr& depth_image) {
+    if (!topic_running_ && !service_running_) return;
     mutex_.lock();
+    ROS_INFO("Get depth");
     frame_id_ = depth_image->header.frame_id;
     cv_bridge::CvImagePtr cv_ptr;
     try {
@@ -74,7 +76,10 @@ void PointCloudObjectFinder::DepthCallback(
 
 void PointCloudObjectFinder::RGBCallback(
     const sensor_msgs::Image::ConstPtr& rgb_image) {
+    if (!topic_running_ && !service_running_) return;
     mutex_.lock();
+    ROS_INFO("Get RGB");
+    frame_id_ = rgb_image->header.frame_id;
     cv_bridge::CvImagePtr cv_ptr;
     try {
         cv_ptr = cv_bridge::toCvCopy(rgb_image);
@@ -100,7 +105,9 @@ void PointCloudObjectFinder::TimerCallback(const ros::TimerEvent& event) {
 bool PointCloudObjectFinder::FindObjectService(
     tinker_vision_msgs::FindObjects::Request& req,
     tinker_vision_msgs::FindObjects::Response& res) {
+    ROS_INFO("Sevice called");
     mutex_.lock();
+    ROS_INFO("Sevice lock acquired");
     service_running_ = true;
     mutex_.unlock();
     if (!running_) StartSubscribe();
@@ -147,7 +154,7 @@ PointCloudObjectFinder::GetRecognizedObjects() {
     std_msgs::Header header;
     header.seq = object_seq_++;
     header.stamp = ros::Time::now();
-    header.frame_id = "kinect_link";
+    header.frame_id = "kinect_kinect2_rgb_link";
     recognized_objects.header = header;
     int i = 0;
     char buf[100];

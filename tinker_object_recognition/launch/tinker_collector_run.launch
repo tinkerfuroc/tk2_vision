@@ -1,7 +1,7 @@
 <launch>
     <node pkg="tinker_camera" type="com_arm_cam.py" name="com_arm_cam" output="screen" args="0"/>
-    <node pkg="tinker_object_recognition" type="collect_sample_node" name="collect_sample_node" output="screen" launch-prefix="xterm -e gdb --args">
-        <param name="filepath" value="/home/dy/tinker_vision/build/img"/>
+    <node pkg="tinker_object_recognition" type="collect_sample_node" name="collect_sample_node" output="screen">
+        <param name="filepath" value="/home/iarc/img"/>
         <rosparam command="load" file="$(find tinker_object_recognition)/param/image_info.yaml"/>
         <rosparam command="load" file="$(find tinker_object_recognition)/param/fd_param.yaml"/>
     </node>

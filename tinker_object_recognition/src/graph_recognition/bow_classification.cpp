@@ -13,7 +13,7 @@ namespace tinker {
 namespace vision {
 BoWRecognition::BoWRecognition(XmlRpc::XmlRpcValue& image_class_info)
     : bow_data_(image_class_info),
-      detector_type_("ORB"),
+      detector_type_("SIFT"),
       descriptor_type_("SIFT"),
       matcher_type_("BruteForce") {
     ROS_INFO("BoW extractor initializing");

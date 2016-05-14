@@ -1,12 +1,13 @@
 image_class_info:
-  image_folder_name: '/home/dy/test_image/'
+  image_folder_name: '/home/iarc/img/'
   object_classes:
-    - juice
-    - vitamin_drink
     - tea
-    - fonta
-    - yogurt
+    - ponta
+    - pretz
+    - drink
+    - crisp
     - cola
-    - red_pretz
-    - fuck
-  image_num: 10
+    - gewas
+    - very_very_very_dark_drink
+    - water
+  image_num: 50

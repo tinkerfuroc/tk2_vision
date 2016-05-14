@@ -78,6 +78,7 @@ public:
             //ROS_ERROR("action server is not active =.=");
             return;
         }
+        ROS_INFO("Classifying");
         cv_bridge::CvImagePtr cv_ptr =
             cv_bridge::toCvCopy(msg, sensor_msgs::image_encodings::BGR8);
         cv::Mat cam_mat = cv_ptr->image;
@@ -101,7 +102,7 @@ public:
             ROS_INFO("Found %s", result_.name.c_str());
             found_count_[result_.id]++;
             object_results_[result_.id] = objects_;
-        }
+        } 
         if(count_ == 0)
         {
             int recognized_class_count = 0;
@@ -166,7 +167,7 @@ public:
                 if (positive_count > 1) ROS_DEBUG("Too much found pair");
                 result.found = (positive_count == 1);
                 if (result.found) {
-                    ROS_INFO("Found %s", result.name.c_str());
+                    //ROS_INFO("Found %s", result.name.c_str());
                     double center_x = bound.x + bound.width / 2.;
                     double center_y = bound.y + bound.height / 2.;
                     result.div_x = center_x - image.cols / 2.;
