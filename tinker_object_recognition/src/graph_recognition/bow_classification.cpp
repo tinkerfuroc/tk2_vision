@@ -13,20 +13,15 @@ namespace tinker {
 namespace vision {
 BoWRecognition::BoWRecognition(XmlRpc::XmlRpcValue& image_class_info)
     : bow_data_(image_class_info),
-      detector_type_("SIFT"),
-      descriptor_type_("SIFT"),
       matcher_type_("BruteForce") {
     ROS_INFO("BoW extractor initializing");
     cv::initModule_nonfree();
-    if (image_class_info.hasMember("descriptor_type"))
-        descriptor_type_ = (string)image_class_info["descriptor_type"];
-    if (image_class_info.hasMember("matcher_type"))
-        matcher_type_ = (string)image_class_info["matcher_type"];
-    ROS_INFO("Using %s %s", descriptor_type_.c_str(), matcher_type_.c_str());
     ROS_ASSERT(image_class_info.hasMember("image_folder_name"));
     image_folder_name = (string)image_class_info["image_folder_name"];
-    feature_detector_ = cv::FeatureDetector::create(detector_type_);
-    desc_extractor_ = cv::DescriptorExtractor::create(descriptor_type_);
+    feature_detector_ = cv::Ptr<cv::FeatureDetector>(
+            new cv::SiftFeatureDetector(0, 3, 0.08, 8));
+    desc_extractor_ = cv::Ptr<cv::DescriptorExtractor>(
+            new cv::SiftFeatureDetector(0, 3, 0.08, 8));
     desc_matcher_ = cv::DescriptorMatcher::create(matcher_type_);
     ROS_ASSERT(!feature_detector_.empty());
     ROS_ASSERT(!desc_extractor_.empty());
