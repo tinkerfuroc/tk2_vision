@@ -2,3 +2,4 @@ foreground_detector_param:
     filter_size: 8
     entropy_threshold: 0.265
     max_aspect_ratio_tolerance: 4.0
+    min_squaresize : 100.0

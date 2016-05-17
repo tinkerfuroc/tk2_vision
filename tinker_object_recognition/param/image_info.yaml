@@ -1,13 +1,17 @@
 image_class_info:
-  image_folder_name: '/home/iarc/img/'
+  image_folder_name: '/home/dy/test_image/'
   object_classes:
-    - tea
-    - ponta
-    - pretz
-    - drink
-    - crisp
+    - white_deadly_drink
+    - brown_deadly_drink
     - cola
     - gewas
-    - very_very_very_dark_drink
-    - water
+    - ponda
+    - h2o
+    - crisp
+    - red_pretz
+    - tea
+    - shuidongli
+    - xianchengduo
+    - xuebi
+    - akarrin
   image_num: 50
