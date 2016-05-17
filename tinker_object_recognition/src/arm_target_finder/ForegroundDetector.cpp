@@ -134,33 +134,50 @@ int ForegroundDetector::CutForegroundOut(const cv::Mat &source_mat,
     DilateImage(mask_mat, 3);
     // divide mask by y
     DivideMaskByY(mask_mat);
+    
+    //debug
+    //res_mat.copyTo(desk_mat);
+    
     // find contour again(this time divided)
     std::vector<std::vector<cv::Point> > contours;
     std::vector<cv::Vec4i> hierarchy;
     cv::findContours(mask_mat, contours, hierarchy, CV_RETR_EXTERNAL,
                      CV_CHAIN_APPROX_SIMPLE);
-    // find biggest contour
+    // find biggest contour and near center
     if (contours.size()) {
-        double largest_area = 0.0;
-        int largest_contour_no = -1;
+        double min_dis = 10086.0;
+        int contour_no = -1;
         for (int i = 0; i < contours.size(); i++) {
             cv::Rect contourbound = cv::boundingRect(contours[i]);
             double ar = (double)contourbound.width / (double)contourbound.height;
             if(ar > 1/max_aspect_ratio_tolerance_ 
-                && ar < max_aspect_ratio_tolerance_)
-            {
+                && ar < max_aspect_ratio_tolerance_) {
                 double a = cv::contourArea(contours[i], false);
-                if (a > largest_area) {
-                    largest_area = a;
-                    largest_contour_no = i;
-                    bound = contourbound;
+                if (a > min_squaresize_) {
+                    double x = contourbound.x + contourbound.width/2 - source_mat.cols/2;
+                    //double y = contourbound.y + contourbound.height/2 - source_mat.rows/2;
+                    //double dis = sqrt(x*x+y*y);
+                    double dis = abs(x);
+                    if (dis < min_dis) {
+                        min_dis = dis;
+                        contour_no = i;
+                        bound = contourbound;
+                    }
                 }
             }
         }
-        if(largest_contour_no >= 0)
+        if(contour_no >= 0)
         {
             cv::Mat roi(source_mat, bound);
             roi.copyTo(desk_mat);
+            //debug
+            /*
+            double x = bound.x + bound.width/2;
+            double y = bound.y + bound.height/2;
+            ROS_INFO("%f", x-source_mat.cols/2);
+            cv::rectangle(desk_mat, bound, cv::Scalar(255, 0, 0));
+            cv::circle(desk_mat, cv::Point(x, y), 2, cv::Scalar(255, 255, 0));
+            */
             return ForegroundDetector::DETECTED;
         }
     }

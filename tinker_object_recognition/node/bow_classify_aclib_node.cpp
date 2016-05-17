@@ -41,7 +41,7 @@ public:
                             &BoWClassifyServerNode::ImageCallBack, this);
         pub_ = nh_.advertise<object_recognition_msgs::RecognizedObjectArray>(
             "arm_cam_objects", 1);
-
+        dbg_pub_ = nh_.advertise<sensor_msgs::Image>("tk2_vision/dbg_handimg", 1);
         for (int i = 0; i < object_classes.size(); i++) {
             bow_recognition_.ReadSVMClassifier(svms[i], object_classes[i]);
         }
@@ -140,11 +140,12 @@ public:
                 // publish it
                 sensor_msgs::Image img;
                 cv_bridge::CvImage cvi(std_msgs::Header(), "bgr8", res_mat);
-                cvi.toImageMsg(img);
                 cvi.header.seq = debug_seq_++;
                 cvi.header.frame_id = "hand";
                 cvi.header.stamp = ros::Time::now();
+                cvi.toImageMsg(img);
                 act_feedback_.handimg = img;
+                dbg_pub_.publish(img);
                 as_.publishFeedback(act_feedback_);
 
                 cv::Mat bow_descriptor;
@@ -212,6 +213,8 @@ private:
     actionlib::SimpleActionServer<tinker_vision_msgs::ObjectAction> as_;
     tinker_vision_msgs::ObjectFeedback act_feedback_;
     tinker_vision_msgs::ObjectResult act_result_;
+    
+    ros::Publisher dbg_pub_;
 };
 
 int main(int argc, char *argv[]) {

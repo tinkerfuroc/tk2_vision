@@ -27,7 +27,6 @@ public:
         ROS_ASSERT(frame_acceptance["accept_count"].getType() == XmlRpc::XmlRpcValue::TypeInt);
         sample_count_ = (int)frame_acceptance["sample_count"];
         accept_count_ = (int)frame_acceptance["accept_count"];
-        pub_ = nh_.advertise<sensor_msgs::Image>("tk2_vision/dbg_handimg", 1);
         ROS_INFO("Waiting for action server to start.");
         ac_.waitForServer();
         ROS_INFO("Action server started, sending goal.");
@@ -58,7 +57,6 @@ public:
     // Called every time feedback is received for the goal
     void feedbackCB(const tinker_vision_msgs::ObjectFeedbackConstPtr& feedback)
     {
-      pub_.publish(feedback->handimg);
     }
     
     bool FindObjectService(
@@ -90,7 +88,6 @@ private:
     ros::NodeHandle private_nh_;
     ros::ServiceServer find_object_server_;
     Client ac_;
-    ros::Publisher pub_;
     int sample_count_;
     int accept_count_;
     tinker_vision_msgs::FindObjects::Response res_;
