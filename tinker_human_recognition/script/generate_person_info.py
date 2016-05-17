@@ -36,6 +36,7 @@ class PersonInfoNode:
         self._new_image = False
         self._body_lock = Lock()
         self._img_lock = Lock()
+        self.bridge = CvBridge()
         self.bodies = None
         self.img = None
 
@@ -45,7 +46,7 @@ class PersonInfoNode:
             self.bodies = body_array.bodies
             self._new_body = True
 
-    def image_handler(self, img):
+    def image_handler(self, data):
         with self._img_lock:
             try:
                 self.img = self.bridge.imgmsg_to_cv2(data, "bgr8")
@@ -66,20 +67,23 @@ class PersonInfoNode:
                     person.trackingId = body.trackingId
                     person.pos = average_position(body)
                     person.header = body.header
+                    rospy.loginfo("Bounding box")
+                    print (body.fromX, body.fromY)
+                    print (body.toX, body.toY)
+                    track_people.people.append(person)
                     cv2.rectangle(self.img, 
                             (body.fromX, body.fromY), 
                             (body.toX, body.toY),
-                            (255, 0, 0))
-                    track_people.people.append(person)
+                            (255, 0, 0), 3)
                 self._image_pub.publish(
-                        bridge.cv2_to_imgmsg(self.img, 'bgr8'))
+                        self.bridge.cv2_to_imgmsg(self.img, 'bgr8'))
                 self._people_pub.publish(track_people)
 
 
 def main(argv):
     person_info_node = PersonInfoNode()
-    rospy.Subscriber('/bodyArray', BodyArray, person_info_node.body_handler)
-    rospy.Subscriber('/head/kinect2/rgb/image', Image, person_info_node.image_handler)
+    rospy.Subscriber('/head/kinect2/bodyArray', BodyArray, person_info_node.body_handler)
+    rospy.Subscriber('/head/kinect2/rgb/image_color', Image, person_info_node.image_handler)
     rate = rospy.Rate(5)
     while not rospy.is_shutdown():
         person_info_node.pub_msgs()

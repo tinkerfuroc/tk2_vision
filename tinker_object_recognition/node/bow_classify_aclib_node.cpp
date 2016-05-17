@@ -28,7 +28,7 @@ public:
           svms(NULL),
           debug_seq_(0),
           seq_(0),
-          as_(nh_, "find_object", false) {
+          as_(nh_, "arm_find_objects", false) {
         detector_.setParam(private_nh_);
         XmlRpc::XmlRpcValue image_class_info;
         private_nh_.getParam("image_class_info", image_class_info);
@@ -64,6 +64,10 @@ public:
         tinker_vision_msgs::ObjectGoalConstPtr goal = as_.acceptNewGoal(); 
         sample_count_ = goal->sample_count;
         accept_count_ = goal->accept_count;
+        if (sample_count_ == 0 && accept_count_ == 0) {
+            sample_count_ = 10;
+            accept_count_ = 5;
+        }
         count_ = sample_count_;
     }
     
@@ -78,7 +82,7 @@ public:
             //ROS_ERROR("action server is not active =.=");
             return;
         }
-        ROS_INFO("Classifying");
+        ROS_DEBUG("Classifying");
         cv_bridge::CvImagePtr cv_ptr =
             cv_bridge::toCvCopy(msg, sensor_msgs::image_encodings::BGR8);
         cv::Mat cam_mat = cv_ptr->image;
