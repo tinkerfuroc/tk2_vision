@@ -41,7 +41,7 @@ public:
                             &BoWClassifyServerNode::ImageCallBack, this);
         pub_ = nh_.advertise<object_recognition_msgs::RecognizedObjectArray>(
             "arm_cam_objects", 1);
-
+        dbg_pub_ = nh_.advertise<sensor_msgs::Image>("tk2_vision/dbg_handimg", 1);
         for (int i = 0; i < object_classes.size(); i++) {
             bow_recognition_.ReadSVMClassifier(svms[i], object_classes[i]);
         }
@@ -145,6 +145,7 @@ public:
                 cvi.header.frame_id = "hand";
                 cvi.header.stamp = ros::Time::now();
                 act_feedback_.handimg = img;
+                dbg_pub_.publish(img);
                 as_.publishFeedback(act_feedback_);
 
                 cv::Mat bow_descriptor;
@@ -191,6 +192,7 @@ private:
     ForegroundDetector detector_;
     string vocabulary_filename_;
     ros::Publisher pub_;
+    ros::Publisher dbg_pub_;
     ros::Subscriber sub_;
     vector<string> object_classes;
     CvSVM *svms;

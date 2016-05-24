@@ -1,0 +1,4 @@
+<launch>
+    <node pkg="tinker_human_recognition" type="cmt_track_node" name="cmt_track_node" output="screen" launch-prefix="xterm -e gdb --args">
+    </node>
+</launch>

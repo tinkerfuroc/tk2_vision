@@ -13,6 +13,7 @@ find_package(catkin REQUIRED COMPONENTS
   cv_bridge
   tf
   tinker_vision_msgs
+  k2_client
 )
 
 ## System dependencies are found with CMake's conventions
@@ -107,7 +108,7 @@ find_package(catkin REQUIRED COMPONENTS
 catkin_package(
    INCLUDE_DIRS include
 #  LIBRARIES tinker_human_recognition
-   CATKIN_DEPENDS roscpp rospy tf message_runtime tinker_vision_msgs
+   CATKIN_DEPENDS roscpp rospy tf message_runtime tinker_vision_msgs k2_client
 #  DEPENDS system_lib
 )
 
@@ -121,29 +122,27 @@ catkin_package(
 include_directories(
   include
   ${catkin_INCLUDE_DIRS}
+  ${OpenCV_INCLUDE_DIRS}
 )
 
-## Declare a C++ library
-# add_library(tinker_human_recognition
-#   src/${PROJECT_NAME}/tinker_human_recognition.cpp
-# )
-
-## Add cmake target dependencies of the library
-## as an example, code may need to be generated before libraries
-## either from message generation or dynamic reconfigure
-# add_dependencies(tinker_human_recognition ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+SET(SRC_FILE
+  src/cmt_track/CMT.cpp
+  src/cmt_track/common.cpp
+  src/cmt_track/Consensus.cpp
+  src/cmt_track/fastcluster.cpp
+  src/cmt_track/Fusion.cpp
+  src/cmt_track/Matcher.cpp
+  src/cmt_track/Tracker.cpp
+)
 
 ## Declare a C++ executable
-# add_executable(tinker_human_recognition_node src/tinker_human_recognition_node.cpp)
-
-## Add cmake target dependencies of the executable
-## same as for the library above
-# add_dependencies(tinker_human_recognition_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_executable(cmt_track_node ./node/cmt_track_node.cpp ${SRC_FILE})
 
 ## Specify libraries to link a library or executable target against
-# target_link_libraries(tinker_human_recognition_node
-#   ${catkin_LIBRARIES}
-# )
+target_link_libraries(cmt_track_node
+    ${catkin_LIBRARIES}
+    ${OpenCV_LIBS}
+)
 
 #############
 ## Install ##
