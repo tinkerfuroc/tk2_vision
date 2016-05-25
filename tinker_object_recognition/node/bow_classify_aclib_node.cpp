@@ -85,8 +85,8 @@ public:
             return;
         }
         img_count_++;
-        if (img_count_ % 10 != 0) return; 
-        ROS_DEBUG("Classifying");
+        if (img_count_ % 3 != 0) return; 
+        ROS_INFO("Classifying");
         cv_bridge::CvImagePtr cv_ptr =
             cv_bridge::toCvCopy(msg, sensor_msgs::image_encodings::BGR8);
         cv::Mat cam_mat = cv_ptr->image;
