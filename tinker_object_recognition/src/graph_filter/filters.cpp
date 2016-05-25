@@ -171,7 +171,7 @@ cv::Mat LineFilterMask(const cv::Mat & image, double linewidth) {
     cv::Canny(image, dst, 50, 200, 3);
     d_dst = CannyDownSample(dst, downsampleStep);
     vector<cv::Vec4i> lines;
-    cv::HoughLinesP(d_dst, lines, 1, CV_PI / 180, 10, (int)(d_dst.rows*0.2), 3);
+    cv::HoughLinesP(d_dst, lines, 1, CV_PI / 180, 30, (int)(d_dst.rows*0.3), 5);
     bruteRemoveVerticals(d_dst, lines);
     float width = downsampleStep * linewidth;
     for (size_t i = 0; i < lines.size(); i++) {

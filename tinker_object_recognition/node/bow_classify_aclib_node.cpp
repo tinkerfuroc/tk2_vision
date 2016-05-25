@@ -1,5 +1,6 @@
 #include "tinker_object_recognition/graph_recognition/bow_classification.h"
 #include "tinker_object_recognition/arm_target_finder/ForegroundDetector.h"
+#include "tinker_object_recognition/utilities.h"
 #include <ros/ros.h>
 #include <sensor_msgs/Image.h>
 #include <cv_bridge/cv_bridge.h>
@@ -28,6 +29,7 @@ public:
           svms(NULL),
           debug_seq_(0),
           seq_(0),
+          img_count_(0),
           as_(nh_, "arm_find_objects", false) {
         detector_.setParam(private_nh_);
         XmlRpc::XmlRpcValue image_class_info;
@@ -82,6 +84,8 @@ public:
             //ROS_ERROR("action server is not active =.=");
             return;
         }
+        img_count_++;
+        if (img_count_ % 10 != 0) return; 
         ROS_DEBUG("Classifying");
         cv_bridge::CvImagePtr cv_ptr =
             cv_bridge::toCvCopy(msg, sensor_msgs::image_encodings::BGR8);
@@ -153,7 +157,8 @@ public:
                 as_.publishFeedback(act_feedback_);
 
                 cv::Mat bow_descriptor;
-                bow_recognition_.CalculateImageDescriptor(image,
+                res_mat = HistogramEqualizeRGB(res_mat);
+                bow_recognition_.CalculateImageDescriptor(res_mat,
                                                           bow_descriptor);
 
                 int positive_count = 0;
@@ -206,6 +211,7 @@ private:
     int count_;
     int sample_count_;
     int accept_count_;
+    int img_count_;
     
     double entropy_threshold_;
     int filter_size_;

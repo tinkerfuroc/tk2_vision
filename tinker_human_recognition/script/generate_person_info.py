@@ -12,6 +12,7 @@ import cv2
 import sys
 from cv_bridge import CvBridge, CvBridgeError
 from threading import Lock
+from numpy import array
 
 def average_position(body):
     sum_x = 0.
@@ -30,7 +31,7 @@ def average_position(body):
 
 class PersonInfoNode:
     def __init__(self):
-        self._people_pub = rospy.Publisher('track_people', TrackPeople, queue_size=10)
+        #self._people_pub = rospy.Publisher('track_people', TrackPeople, queue_size=10)
         self._image_pub = rospy.Publisher('~/people_track_img', Image, queue_size=10)
         self._new_body = False
         self._new_image = False
@@ -62,22 +63,30 @@ class PersonInfoNode:
                 self._new_body = False
                 self._new_image = False
                 track_people = TrackPeople()
+                show_img = array(self.img, copy=True)
+                rows, cols, _ = self.img.shape
                 for body in self.bodies:
                     person = TrackPerson()
                     person.trackingId = body.trackingId
                     person.pos = average_position(body)
                     person.header = body.header
                     rospy.loginfo("Bounding box")
-                    print (body.fromX, body.fromY)
-                    print (body.toX, body.toY)
+                    from_x = max(min(body.fromX, body.toX), 0)
+                    to_x = min(max(body.fromX, body.toX), cols)
+                    from_y = max(min(body.fromY, body.toY), 0)
+                    to_y = min(max(body.fromY, body.toY), rows)
+                    print(from_x, from_y)
+                    print(to_x, to_y)
+                    person.image = self.bridge.cv2_to_imgmsg(
+                            self.img[from_y:to_y, from_x:to_x], 'bgr8')
                     track_people.people.append(person)
-                    cv2.rectangle(self.img, 
+                    cv2.rectangle(show_img, 
                             (body.fromX, body.fromY), 
                             (body.toX, body.toY),
                             (255, 0, 0), 3)
                 self._image_pub.publish(
-                        self.bridge.cv2_to_imgmsg(self.img, 'bgr8'))
-                self._people_pub.publish(track_people)
+                        self.bridge.cv2_to_imgmsg(show_img, 'bgr8'))
+                #self._people_pub.publish(track_people)
 
 
 def main(argv):

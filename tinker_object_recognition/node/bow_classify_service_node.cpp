@@ -17,7 +17,7 @@ class BoWClassifyClientNode {
 public:
     BoWClassifyClientNode() 
         :   private_nh_("~"),
-            ac_("find_object", true) {
+            ac_("arm_find_objects", true) {
         XmlRpc::XmlRpcValue frame_acceptance;
         private_nh_.getParam("frame_acceptance", frame_acceptance);
         ROS_ASSERT(frame_acceptance.size() > 0);

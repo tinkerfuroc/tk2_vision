@@ -129,6 +129,7 @@ vector<PointCloudPtr> PointCloudObjectFinder::GetObjectPointClouds() {
     cv::resize(depth_image_, depth_image_, cv::Size(), 0.5, 0.5,
                cv::INTER_NEAREST);
     cv::resize(rgb_image_, rgb_image_, cv::Size(), 0.5, 0.5, cv::INTER_NEAREST);
+    cv::imwrite("/home/iarc/origin.png", rgb_image_);
     cv::Mat gray_image;
     cv::cvtColor(rgb_image_, gray_image, CV_BGR2GRAY);
     cv::Mat line_mask = LineFilterMask(gray_image, 3.5);
@@ -137,9 +138,10 @@ vector<PointCloudPtr> PointCloudObjectFinder::GetObjectPointClouds() {
     cv::Mat entropy_mask = EntropyFilterMask(gray_image, 0.4, 5, 2);
     DilateImage(entropy_mask, 4);
     ErodeImage(entropy_mask, 6);
-    DilateImage(entropy_mask, 6);
+    DilateImage(entropy_mask, 8);
     ApplyMask(entropy_mask, depth_image_, cv::Vec3s(0, 0, 0));
     ApplyMask(entropy_mask, rgb_image_, cv::Vec3b(0, 0, 0));
+    cv::imwrite("/home/iarc/test.png", rgb_image_);
     PointCloudPtr filtered_cloud = BuildPointCloud(depth_image_, rgb_image_);
     ClusterDivider divider(filtered_cloud);
     return divider.GetDividedPointClouds();

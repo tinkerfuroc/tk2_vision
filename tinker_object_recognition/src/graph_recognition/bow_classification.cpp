@@ -4,6 +4,7 @@
 #include <cstdlib>
 #include "tinker_object_recognition/common.h"
 #include <opencv2/nonfree/nonfree.hpp>
+#include "tinker_object_recognition/utilities.h"
 
 using std::string;
 using std::map;
@@ -64,6 +65,7 @@ cv::Mat BoWRecognition::TrainVocabulary() {
         // Randomly pick and compute the descriptors from that image.
         int randImgIdx = rng((unsigned)images.size());
         cv::Mat colorImage = cv::imread(images[randImgIdx].path);
+        colorImage = HistogramEqualizeRGB(colorImage);
         vector<cv::KeyPoint> imageKeypoints;
         feature_detector_->detect(colorImage, imageKeypoints);
         cv::Mat imageDescriptors;
