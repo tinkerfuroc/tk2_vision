@@ -42,6 +42,27 @@ PointCloudPtr BuildPointCloud(const cv::Mat& depthImage,
     return pointCloud;
 }
 
+PointCloudPtr BuildPointCloud(const cv::Mat& depthImage) {
+    PointCloudPtr pointCloud(new pcl::PointCloud<pcl::PointXYZRGB>());
+    for (int y = 0; y < depthImage.rows; y++) {
+        for (int x = 0; x < depthImage.cols; x++) {
+            cv::Vec3s location = depthImage.at<cv::Vec3s>(y, x);
+            if (location[2] < kMinDepth) {
+                continue;
+            }
+            pcl::PointXYZRGB newPoint;
+            // Transform coordinate
+            newPoint.x = ((float)location[2]) / 1000.;
+            newPoint.y = ((float)location[0]) / 1000.;
+            newPoint.z = ((float)location[1]) / 1000.;
+            pointCloud->points.push_back(newPoint);
+        }
+    }
+    pointCloud->width = (int)pointCloud->points.size();
+    pointCloud->height = 1;
+    return pointCloud;
+}
+
 sensor_msgs::PointCloud2 ToROSCloud(
     const pcl::PointCloud<pcl::PointXYZRGB>& point_cloud) {
     sensor_msgs::PointCloud2 cloud;
