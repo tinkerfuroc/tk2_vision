@@ -65,7 +65,7 @@ cv::Mat BoWRecognition::TrainVocabulary() {
         // Randomly pick and compute the descriptors from that image.
         int randImgIdx = rng((unsigned)images.size());
         cv::Mat colorImage = cv::imread(images[randImgIdx].path);
-        colorImage = HistogramEqualizeRGB(colorImage);
+        //colorImage = HistogramEqualizeRGB(colorImage);
         vector<cv::KeyPoint> imageKeypoints;
         feature_detector_->detect(colorImage, imageKeypoints);
         cv::Mat imageDescriptors;

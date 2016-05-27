@@ -157,7 +157,7 @@ public:
                 as_.publishFeedback(act_feedback_);
 
                 cv::Mat bow_descriptor;
-                res_mat = HistogramEqualizeRGB(res_mat);
+                //res_mat = HistogramEqualizeRGB(res_mat);
                 bow_recognition_.CalculateImageDescriptor(res_mat,
                                                           bow_descriptor);
 
@@ -179,9 +179,9 @@ public:
                 if (result.found) {
                     //ROS_INFO("Found %s", result.name.c_str());
                     double center_x = bound.x + bound.width / 2.;
-                    double center_y = bound.y + bound.height / 2.;
+                    double bottom_y = bound.y + bound.height;
                     result.div_x = center_x - image.cols / 2.;
-                    result.div_y = center_y - image.rows / 2.;
+                    result.div_y = bottom_y - image.rows / 2.;
                 }
             }
         } catch (cv::Exception &e) {
