@@ -7,11 +7,14 @@
 #include <fstream>
 #include <sstream>
 #include <cstdio>
+#include <vector>
 #include <getopt.h>
 #include <ros/ros.h>
 #include <k2_client/BodyArray.h>
 #include <sensor_msgs/Image.h>
 #include <cv_bridge/cv_bridge.h>
+
+using std::vector;
 
 class CMT_track_node
 {
@@ -24,32 +27,36 @@ public:
         if (init_done_)
         {
             cv::Mat cam_mat_gray;
-            if (cam_mat.channels() > 1) {
-                cv::cvtColor(cam_mat, cam_mat_gray, CV_BGR2GRAY);
-            } else {
-                cam_mat_gray = cam_mat;
+            cv::cvtColor(cam_mat, cam_mat_gray, CV_BGR2GRAY);
+            
+            try
+            {
+                //Let CMT process the frame
+                cmt_.processFrame(cam_mat_gray);
             }
-            //Let CMT process the frame
-            cmt_.processFrame(cam_mat_gray);
+            catch (...)
+            {
+                // mdzz why can I get a nan error in fastclauster
+                // dirty fuck
+                ROS_WARN("get strange error in cmt::processframe");
+                return;
+            }
             
             //compare histogram using earth mover's distance
             cv::Rect rect = getRectFromCMT();
-            cv::Mat hist;
-            getHist(cam_mat, rect, hist);
-            float emd = cv::EMD(hist, start_histogram_, CV_DIST_L1);
-            
+            cv::Mat hist = getHist(cam_mat, rect);
+            float emd = compare_histograms(hist, start_histogram_);
+            ROS_INFO("emd: %f", emd);
             is_same_ = (emd < emd_threshold_);
             
             //debug image display
             Draw(cam_mat);
-            sensor_msgs::Image img;
-            cv_bridge::CvImage cvi(std_msgs::Header(), "bgr8", cam_mat);
-            cvi.toImageMsg(img);
-            dbg_pub_.publish(img);
+            
             // if dead
-            if (0)
+            if (!is_same_ )
             {
-                init_done_ = false;
+            //    init_done_ = false;
+                ROS_WARN("lost sight of human.");
             }
         }
         else
@@ -57,9 +64,15 @@ public:
             start_mat_ = cam_mat;
             ROS_WARN("no body detected.");
         }
+        sensor_msgs::Image img;
+        cv_bridge::CvImage cvi(std_msgs::Header(), "bgr8", cam_mat);
+        cvi.toImageMsg(img);
+        dbg_pub_.publish(img);
     }
     
-    void K2BodyCallBack(const k2_client::BodyArray::ConstPtr &msg) {
+
+    void K2BodyCallBack(const k2_client::BodyArray::ConstPtr &msg) 
+    {
         if (!init_done_ && !start_mat_.empty()) {
             k2_client::Body body = msg->bodies[0];
             start_rect_ = cv::Rect(min(body.toX, body.fromX), min(body.toY, body.fromY),
@@ -70,45 +83,79 @@ public:
             } else {
                 img_gray = start_mat_;
             }
+            cmt_ = cmt::CMT();
             cmt_.initialize(img_gray, start_rect_);
             init_done_ = true;
             
-            getHist(start_mat_, start_rect_, start_histogram_);
+            start_histogram_ = getHist(start_mat_, start_rect_);
             ROS_INFO("kinect body detected. cmt start.");
         }
     }
     
-    void getHist(cv::Mat &source, cv::Rect &bound, cv::Mat &desk)
+    cv::Mat getHist(cv::Mat &source, cv::Rect &bound) 
     {
-        cv::Rect rect(bound.x, bound.y, bound.width, min(bound.height, source.rows - bound.y - 1));
+        int rectupY = max(bound.y, 0);
+        int rectdownY = min(source.rows, bound.y+bound.height);
+        int rectleftX = max(bound.x, 0);
+        int rectrightX = min(source.cols, bound.x+bound.width);
+        ROS_INFO("fuck %d %d %d %d", rectleftX, rectupY, rectrightX - rectleftX, rectdownY - rectupY);
+        cv::Rect rect(rectleftX, rectupY, rectrightX - rectleftX, rectdownY - rectupY);
+        
         cv::Mat roi(source, rect);
         cv::Mat norm_mat;
         cv::resize(roi, norm_mat, cv::Size(100, 100));
         
-        const int imgCount = 1;
-        const int dims = 3;
-        const int sizes[] = {256,256,256};
-        const int channels[] = {0,1,2};
-        const float rRange[] = {0,256};
-        const float gRange[] = {0,256};
-        const float bRange[] = {0,256};
-        const float *ranges[] = {rRange,gRange,bRange};
-        Mat mask = Mat();
-        
-        calcHist(&norm_mat, imgCount, channels, mask, desk, dims, sizes, ranges);
+	    const int dims = 1;
+	    const int sizes[] = { 256, 256, 256};
+	    const int num_channels = 3;
+	    const int channels[] = { 0, 1, 2 };
+	    float rRange[] = { 0, 256 };
+	    float gRange[] = { 0, 256 };
+	    float bRange[] = { 0, 256 };
+	    const float *ranges[] = { rRange, gRange, bRange };
+	    cv::Mat mask = cv::Mat();
+
+	    cv::Mat hist = cv::Mat(0, 1, CV_32F);
+	    cv::Mat temp;
+	    for (int c = 0; c < num_channels; c++) {
+		    // Calculate the histogram for the current color channel
+		    calcHist(&norm_mat, 1, &channels[c], mask, temp, dims, &sizes[c], &ranges[c], true, false);
+		    // Append the current channel's histogram
+		    hist.push_back(temp);
+		    //cout << hist;
+	    }
+	    // Transpose the histogram so we have a row vector
+	    cv::Mat hist_t = hist.clone().t();
+	    hist.release();
+
+	    // Normalize the histogram
+	    normalize(hist_t, hist_t, 1.0, 0.0, cv::NORM_L1);
+	    return hist_t;
     }
+
+    float compare_histograms(cv::Mat hist1, cv::Mat hist2) 
+    {
+	    assert(hist1.cols == hist2.cols);
+
+	    // Make a copy of the histograms as we will be adding columns
+	    cv::Mat hist1copy = hist1.t();
+	    cv::Mat hist2copy = hist2.t();
+
+	    // Append an index of the corresponding row of each histogram bin, for EMD
+	    cv::Mat emd_cols = cv::Mat::zeros(hist1.cols, 1, CV_32F);
+	    for (int i = 0; i < hist1.cols; i++) {
+		    emd_cols.at<float>(i, 0) = i + 1;
+	    }
+
+	    hconcat(hist1copy, emd_cols, hist1copy);
+	    hconcat(hist2copy, emd_cols, hist2copy);
+
+	    return EMD(hist1copy, hist2copy, CV_DIST_L1);
+    }
+    
     
     cv::Rect getRectFromCMT()
     {
-        /*
-        cv::Point2f vertices[4];
-        cmt_.bb_rot.points(vertices);
-        for (int i = 0; i < 4; i++)
-        {
-            cv::line(im, vertices[i], vertices[(i+1)%4], cv::Scalar(255,0,0));
-        }
-        */
-        
         //it seems that the bb_rot is a zhuangbi rotatedrect actually rect.
         //this B has the technique.
         return cmt_.bb_rot.boundingRect();
@@ -124,19 +171,17 @@ public:
         //draw rect
         if(is_same_)
         {
-            cv::rectangle(im, getRectFromCMT(), cv::Scalar(255,255,255));
-            ROS_INFO("it seems that the histograms are the same");
+            cv::rectangle(im, getRectFromCMT(), cv::Scalar(255,255,255), 3);
         }
         else
         {
-            cv::rectangle(im, getRectFromCMT(), cv::Scalar(255,0,0));
-            ROS_INFO("it seems that the histograms are the same");
+            cv::rectangle(im, getRectFromCMT(), cv::Scalar(255,0,0), 3);
         }    
             
     }
 
     CMT_track_node()
-        : init_done_(false), emd_threshold_(0.5)
+        : init_done_(false), emd_threshold_(20)
     {
         img_sub_ = nh_.subscribe("head/kinect2/rgb/image_color", 1,
             &CMT_track_node::ImageCallBack, this);
@@ -164,6 +209,7 @@ protected:
     
     int abs(int n) {return n>0?n:-n;}
     int min(int a, int b) {return a>b?b:a;}
+    int max(int a, int b) {return a<b?b:a;}
 };
 
 int main(int argc, char **argv)
