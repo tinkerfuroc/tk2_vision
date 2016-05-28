@@ -16,10 +16,12 @@ namespace tinker
 namespace vision
 {
 
+typedef pcl::PointCloud<pcl::PointXYZ>::Ptr LocPointCloudPtr;
 typedef pcl::PointCloud<pcl::PointXYZRGB>::Ptr PointCloudPtr;
 PointCloudPtr BuildPointCloud(const cv::Mat & depthImage, const cv::Mat & rgbImage);
-PointCloudPtr BuildPointCloud(const cv::Mat & depthImage);
+LocPointCloudPtr BuildPointCloud(const cv::Mat & depthImage);
 sensor_msgs::PointCloud2 ToROSCloud(const pcl::PointCloud<pcl::PointXYZRGB> & point_cloud);
+sensor_msgs::PointCloud2 ToROSCloud(const pcl::PointCloud<pcl::PointXYZ> & point_cloud);
 
 
 }

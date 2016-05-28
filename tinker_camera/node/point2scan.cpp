@@ -10,13 +10,14 @@
 #include <boost/foreach.hpp>
 #include <cv_bridge/cv_bridge.h>
 #include <image_transport/image_transport.h>
+#include <pcl/filters/statistical_outlier_removal.h>
 
 using namespace tinker::vision;
 using std::string;
 using std::vector;
 
-void ToPolar(double x, double y, double &r, double &theta) {
-    double dis = sqrt(x * x + y * y);
+void ToPolar(float x, float y, float &r, float &theta) {
+    float dis = sqrt(x * x + y * y);
     theta = acos(x / dis);
     if (y < 0) theta = -theta;
     r = dis;
@@ -33,6 +34,8 @@ public:
                           string("/head/kinect2/depth/image_depth"));
         private_nh_.param("frame_id", frame_id_,
                           string("kinect_kinect2_rgb_link"));
+        private_nh_.param("min_z", min_z_, float(-0.8));
+        private_nh_.param("max_z", max_z_, float(0.1));
         pointcloud_pub_ =
             nh_.advertise<sensor_msgs::PointCloud2>("/kinect_pointcloud", 1);
         scan_pub_ =
@@ -55,17 +58,23 @@ public:
 
     void PublishData() {
         seq_++;
-        PointCloudPtr pointcloud = BuildPointCloud(depth_image_);
-        sensor_msgs::PointCloud2 ros_cloud = ToROSCloud(*pointcloud);
+        LocPointCloudPtr pointcloud = BuildPointCloud(depth_image_);
+        LocPointCloudPtr filtered_cloud(new pcl::PointCloud<pcl::PointXYZ>());
+        pcl::StatisticalOutlierRemoval<pcl::PointXYZ> filter;
+        filter.setInputCloud(pointcloud);
+        filter.setMeanK(20);
+        filter.setStddevMulThresh(1.0);
+        filter.filter(*filtered_cloud);
+        sensor_msgs::PointCloud2 ros_cloud = ToROSCloud(*filtered_cloud);
         ros_cloud.header.seq = seq_;
         ros_cloud.header.frame_id = frame_id_;
         ros_cloud.header.stamp = ros::Time::now();
         pointcloud_pub_.publish(ros_cloud);
-        PublishLaserScan(pointcloud);
+        PublishLaserScan(filtered_cloud);
     }
 
 private:
-    void PublishLaserScan(PointCloudPtr pointcloud) {
+    void PublishLaserScan(LocPointCloudPtr pointcloud) {
         sensor_msgs::LaserScan laser_scan;
         static const double angle_increment = 0.005;
         laser_scan.range_min = 0;
@@ -76,10 +85,12 @@ private:
         int num_points = int(2 * M_PI / angle_increment) + 1;
         vector<float> ranges(num_points, INFINITY);
         for (int i = 0; i < pointcloud->points.size(); i++) {
-            const pcl::PointXYZRGB &p = pointcloud->points[i];
-            double x = p.x;
-            double y = p.y;
-            double r, theta;
+            const pcl::PointXYZ &p = pointcloud->points[i];
+            float x = p.x;
+            float y = p.y;
+            float z = p.z;
+            if (z < min_z_ or z > max_z_) continue;
+            float r, theta;
             ToPolar(x, y, r, theta);
             //ROS_INFO("at %f %f %f", p.x, p.y, p.z);
             int p_index = (theta + M_PI) / angle_increment;
@@ -104,6 +115,8 @@ private:
     ros::Publisher scan_pub_;
     image_transport::Subscriber depth_sub_;
     cv::Mat depth_image_;
+    float min_z_;
+    float max_z_;
     int seq_;
 };
 
