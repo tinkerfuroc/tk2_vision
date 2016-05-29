@@ -7,6 +7,7 @@
 #include <pcl/PCLPointCloud2.h>
 #include <pcl_conversions/pcl_conversions.h>
 #include <pcl/conversions.h>
+#include <cfloat>
 
 namespace tinker {
 namespace vision {
@@ -19,6 +20,13 @@ static const short kMinDepth = 100;
 
 PointCloudPtr BuildPointCloud(const cv::Mat& depthImage,
                               const cv::Mat& rgbImage) {
+    return BuildPointCloud(depthImage, rgbImage, -FLT_MAX, FLT_MAX);
+}
+
+PointCloudPtr BuildPointCloud(const cv::Mat& depthImage,
+                              const cv::Mat& rgbImage, 
+                              float min_x,
+                              float max_x) {
     PointCloudPtr pointCloud(new pcl::PointCloud<pcl::PointXYZRGB>());
     for (int y = 0; y < rgbImage.rows; y++) {
         for (int x = 0; x < rgbImage.cols; x++) {
@@ -34,7 +42,8 @@ PointCloudPtr BuildPointCloud(const cv::Mat& depthImage,
             newPoint.x = ((float)location[2]) / 1000.;
             newPoint.y = ((float)location[0]) / 1000.;
             newPoint.z = ((float)location[1]) / 1000.;
-            pointCloud->points.push_back(newPoint);
+            if (newPoint.x >= min_x && newPoint.x <= max_x)
+                pointCloud->points.push_back(newPoint);
         }
     }
     pointCloud->width = (int)pointCloud->points.size();

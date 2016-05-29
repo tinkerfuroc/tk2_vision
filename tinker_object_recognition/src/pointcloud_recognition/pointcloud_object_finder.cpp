@@ -140,25 +140,9 @@ vector<PointCloudPtr> PointCloudObjectFinder::GetObjectPointClouds() {
     DilateImage(entropy_mask, 6);
     ApplyMask(entropy_mask, depth_image_, cv::Vec3s(0, 0, 0));
     ApplyMask(entropy_mask, rgb_image_, cv::Vec3b(0, 0, 0));
-    PointCloudPtr filtered_cloud = BuildPointCloud(depth_image_, rgb_image_);
+    PointCloudPtr filtered_cloud = BuildPointCloud(depth_image_, rgb_image_, 0.3, 2.5);
     ClusterDivider divider(filtered_cloud);
     return divider.GetDividedPointClouds();
-    //ApplyMask<unsigned char>(entropy_mask, mask, 0);
-    //vector<vector<cv::Point> > contours;
-    //vector<cv::Vec4i> hierarchy;
-    //cv::findContours(mask, contours, hierarchy, CV_RETR_TREE,
-    //                 CV_CHAIN_APPROX_SIMPLE);
-    //vector<PointCloudPtr> object_pointclouds;
-    //for (int i = 0; i < contours.size(); i++) {
-    //    cv::Rect boundrect = cv::boundingRect(cv::Mat(contours[i]));
-    //    PointCloudPtr point_cloud = BuildPointCloud(depth_image_(boundrect),
-    //                rgb_image_(boundrect));
-    //    if (point_cloud->width < 1500)
-    //        continue;
-    //    object_pointclouds.push_back(BuildPointCloud(depth_image_(boundrect),
-    //                rgb_image_(boundrect)));
-    //}
-    //return object_pointclouds;
 }
 
 object_recognition_msgs::RecognizedObjectArray
