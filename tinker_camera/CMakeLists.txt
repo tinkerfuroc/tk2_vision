@@ -13,6 +13,7 @@ find_package(catkin REQUIRED COMPONENTS
   rospy
   sensor_msgs
   cv_bridge
+  image_transport
 )
 
 ## System dependencies are found with CMake's conventions
@@ -136,7 +137,10 @@ add_library(tinker_camera_lib
 # add_dependencies(tinker_camera ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Declare a C++ executable
-# add_executable(tinker_camera_node src/tinker_camera_node.cpp)
+add_executable(point2scan 
+    ./node/point2scan.cpp
+    ./src/pointcloud_builder.cpp
+)
 
 ## Add cmake target dependencies of the executable
 ## same as for the library above
@@ -144,6 +148,12 @@ add_library(tinker_camera_lib
 
 ## Specify libraries to link a library or executable target against
 target_link_libraries(tinker_camera_lib
+    ${catkin_LIBRARIES}
+    ${OpenCV_LIBS}
+    ${PCL_LIBRARIES}
+)
+
+target_link_libraries(point2scan
     ${catkin_LIBRARIES}
     ${OpenCV_LIBS}
     ${PCL_LIBRARIES}

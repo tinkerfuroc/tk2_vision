@@ -131,16 +131,16 @@ vector<PointCloudPtr> PointCloudObjectFinder::GetObjectPointClouds() {
     cv::resize(rgb_image_, rgb_image_, cv::Size(), 0.5, 0.5, cv::INTER_NEAREST);
     cv::Mat gray_image;
     cv::cvtColor(rgb_image_, gray_image, CV_BGR2GRAY);
-    cv::Mat line_mask = LineFilterMask(gray_image, 3.5);
-    ApplyMask(line_mask, depth_image_, cv::Vec3s(0, 0, 0));
-    ApplyMask(line_mask, rgb_image_, cv::Vec3b(0, 0, 0));
+    cv::Mat mask = LineFilterMask(gray_image, 3.5);
+    ApplyMask(mask, depth_image_, cv::Vec3s(0, 0, 0));
+    ApplyMask(mask, rgb_image_, cv::Vec3b(0, 0, 0));
     cv::Mat entropy_mask = EntropyFilterMask(gray_image, 0.4, 5, 2);
     DilateImage(entropy_mask, 4);
     ErodeImage(entropy_mask, 6);
     DilateImage(entropy_mask, 6);
     ApplyMask(entropy_mask, depth_image_, cv::Vec3s(0, 0, 0));
     ApplyMask(entropy_mask, rgb_image_, cv::Vec3b(0, 0, 0));
-    PointCloudPtr filtered_cloud = BuildPointCloud(depth_image_, rgb_image_);
+    PointCloudPtr filtered_cloud = BuildPointCloud(depth_image_, rgb_image_, 0.3, 2.5);
     ClusterDivider divider(filtered_cloud);
     return divider.GetDividedPointClouds();
 }
@@ -166,7 +166,7 @@ PointCloudObjectFinder::GetRecognizedObjects() {
         debug_cloud_ += *object_cloud;
         object_recognition_msgs::RecognizedObject object;
         geometry_msgs::Point center = GetCenter(object_cloud);
-        ROS_INFO("center at %f %f %f", center.x, center.y, center.z);
+        ROS_INFO("size %d, center at %f %f %f", object_cloud->width, center.x, center.y, center.z);
         sensor_msgs::PointCloud2 cloud = ToROSCloud(*object_cloud);
         object.header = header;
         object.pose.header = header;
@@ -179,7 +179,7 @@ PointCloudObjectFinder::GetRecognizedObjects() {
     sensor_msgs::PointCloud2 debug_cloud = ToROSCloud(debug_cloud_);
     debug_cloud.header.seq = debug_seq_++;
     debug_cloud.header.stamp = ros::Time::now();
-    debug_cloud.header.frame_id = "kinect_link";
+    debug_cloud.header.frame_id = header.frame_id;
     debug_pub_.publish(debug_cloud);
     return recognized_objects;
 }
@@ -198,7 +198,7 @@ void PointCloudObjectFinder::StartSubscribe() {
 
 void PointCloudObjectFinder::StopSubscribe() {
     ros::Rate r(1);
-    while(service_running_) r.sleep();
+    while (service_running_) r.sleep();
     mutex_.lock();
     if (running_) {
         depth_image_subscribe_.shutdown();

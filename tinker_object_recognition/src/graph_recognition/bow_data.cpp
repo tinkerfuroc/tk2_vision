@@ -77,6 +77,7 @@ void BoWData::GetClassImages(const string& obj_class,
                 neg_images.push_back(o);
             }
         }
+        ROS_INFO("%d images for %s", balance_cnt, obj_class.c_str());
         ROS_ASSERT(images_.size() >= 2*balance_cnt);
         for (int i=0; i<balance_cnt; i++)
         {

@@ -106,7 +106,7 @@ find_package(catkin REQUIRED COMPONENTS
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
-   INCLUDE_DIRS include
+#  INCLUDE_DIRS include
 #  LIBRARIES tinker_human_recognition
    CATKIN_DEPENDS roscpp rospy tf message_runtime tinker_vision_msgs k2_client
 #  DEPENDS system_lib

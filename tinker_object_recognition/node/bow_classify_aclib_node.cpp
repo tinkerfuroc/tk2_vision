@@ -1,5 +1,6 @@
 #include "tinker_object_recognition/graph_recognition/bow_classification.h"
 #include "tinker_object_recognition/arm_target_finder/ForegroundDetector.h"
+#include "tinker_object_recognition/utilities.h"
 #include <ros/ros.h>
 #include <sensor_msgs/Image.h>
 #include <cv_bridge/cv_bridge.h>
@@ -28,7 +29,8 @@ public:
           svms(NULL),
           debug_seq_(0),
           seq_(0),
-          as_(nh_, "find_object", false) {
+          img_count_(0),
+          as_(nh_, "arm_find_objects", false) {
         detector_.setParam(private_nh_);
         XmlRpc::XmlRpcValue image_class_info;
         private_nh_.getParam("image_class_info", image_class_info);
@@ -64,6 +66,10 @@ public:
         tinker_vision_msgs::ObjectGoalConstPtr goal = as_.acceptNewGoal(); 
         sample_count_ = goal->sample_count;
         accept_count_ = goal->accept_count;
+        if (sample_count_ == 0 && accept_count_ == 0) {
+            sample_count_ = 10;
+            accept_count_ = 5;
+        }
         count_ = sample_count_;
     }
     
@@ -78,6 +84,8 @@ public:
             //ROS_ERROR("action server is not active =.=");
             return;
         }
+        img_count_++;
+        if (img_count_ % 3 != 0) return; 
         ROS_INFO("Classifying");
         cv_bridge::CvImagePtr cv_ptr =
             cv_bridge::toCvCopy(msg, sensor_msgs::image_encodings::BGR8);
@@ -140,16 +148,17 @@ public:
                 // publish it
                 sensor_msgs::Image img;
                 cv_bridge::CvImage cvi(std_msgs::Header(), "bgr8", res_mat);
-                cvi.toImageMsg(img);
                 cvi.header.seq = debug_seq_++;
                 cvi.header.frame_id = "hand";
                 cvi.header.stamp = ros::Time::now();
+                cvi.toImageMsg(img);
                 act_feedback_.handimg = img;
                 dbg_pub_.publish(img);
                 as_.publishFeedback(act_feedback_);
 
                 cv::Mat bow_descriptor;
-                bow_recognition_.CalculateImageDescriptor(image,
+                //res_mat = HistogramEqualizeRGB(res_mat);
+                bow_recognition_.CalculateImageDescriptor(res_mat,
                                                           bow_descriptor);
 
                 int positive_count = 0;
@@ -170,9 +179,9 @@ public:
                 if (result.found) {
                     //ROS_INFO("Found %s", result.name.c_str());
                     double center_x = bound.x + bound.width / 2.;
-                    double center_y = bound.y + bound.height / 2.;
+                    double bottom_y = bound.y + bound.height;
                     result.div_x = center_x - image.cols / 2.;
-                    result.div_y = center_y - image.rows / 2.;
+                    result.div_y = bottom_y - image.rows / 2.;
                 }
             }
         } catch (cv::Exception &e) {
@@ -203,6 +212,7 @@ private:
     int count_;
     int sample_count_;
     int accept_count_;
+    int img_count_;
     
     double entropy_threshold_;
     int filter_size_;
@@ -214,6 +224,8 @@ private:
     actionlib::SimpleActionServer<tinker_vision_msgs::ObjectAction> as_;
     tinker_vision_msgs::ObjectFeedback act_feedback_;
     tinker_vision_msgs::ObjectResult act_result_;
+    
+    ros::Publisher dbg_pub_;
 };
 
 int main(int argc, char *argv[]) {
