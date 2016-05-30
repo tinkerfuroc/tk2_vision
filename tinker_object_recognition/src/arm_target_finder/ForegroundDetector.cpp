@@ -4,6 +4,9 @@
 #include <tinker_object_recognition/arm_target_finder/ForegroundDetector.h>
 #include <cassert>
 #include <cmath>
+#include <cfloat>
+
+using std::vector;
 
 namespace tinker {
 namespace vision {
@@ -114,14 +117,8 @@ void ForegroundDetector::Filter(const cv::Mat &source_mat, cv::Mat &desk_mat) {
     BuildImageByMask(source_mat, desk_mat, mask_mat);
 }
 
-int ForegroundDetector::CutForegroundOut(const cv::Mat &source_mat, cv::Mat &desk_mat) {
-    cv::Rect bound;
-    return CutForegroundOut(source_mat, desk_mat, bound);
-}
-
-int ForegroundDetector::CutForegroundOut(const cv::Mat &source_mat,
-                                         cv::Mat &desk_mat, 
-                                         cv::Rect &bound) {
+vector<ForegroundImage> ForegroundDetector::CutAllForegroundOut(const cv::Mat &source_mat) {
+    vector<ForegroundImage> results;
     // copy the source
     cv::Mat res_mat;
     source_mat.copyTo(res_mat);
@@ -134,54 +131,51 @@ int ForegroundDetector::CutForegroundOut(const cv::Mat &source_mat,
     DilateImage(mask_mat, 3);
     // divide mask by y
     DivideMaskByY(mask_mat);
-    
-    //debug
-    //res_mat.copyTo(desk_mat);
-    
     // find contour again(this time divided)
     std::vector<std::vector<cv::Point> > contours;
     std::vector<cv::Vec4i> hierarchy;
     cv::findContours(mask_mat, contours, hierarchy, CV_RETR_EXTERNAL,
                      CV_CHAIN_APPROX_SIMPLE);
-    // find biggest contour and near center
-    if (contours.size()) {
-        double min_dis = 10086.0;
-        int contour_no = -1;
-        for (int i = 0; i < contours.size(); i++) {
-            cv::Rect contourbound = cv::boundingRect(contours[i]);
-            double ar = (double)contourbound.width / (double)contourbound.height;
-            if(ar > 1/max_aspect_ratio_tolerance_ 
-                && ar < max_aspect_ratio_tolerance_) {
-                double a = cv::contourArea(contours[i], false);
-                if (a > min_squaresize_) {
-                    double x = contourbound.x + contourbound.width/2 - source_mat.cols/2;
-                    //double y = contourbound.y + contourbound.height/2 - source_mat.rows/2;
-                    //double dis = sqrt(x*x+y*y);
-                    double dis = abs(x);
-                    if (dis < min_dis) {
-                        min_dis = dis;
-                        contour_no = i;
-                        bound = contourbound;
-                    }
-                }
+    for (int i = 0; i < contours.size(); i++) {
+        cv::Rect contour_bound = cv::boundingRect(contours[i]);
+        double ar = (double)contour_bound.width / (double)contour_bound.height;
+        if(ar > 1/max_aspect_ratio_tolerance_ 
+           && ar < max_aspect_ratio_tolerance_) {
+            double a = cv::contourArea(contours[i], false);
+            if (a > min_squaresize_) {
+                ForegroundImage foreground;
+                foreground.foreground = source_mat(contour_bound);
             }
         }
-        if(contour_no >= 0)
-        {
-            cv::Mat roi(source_mat, bound);
-            roi.copyTo(desk_mat);
-            //debug
-            /*
-            double x = bound.x + bound.width/2;
-            double y = bound.y + bound.height/2;
-            ROS_INFO("%f", x-source_mat.cols/2);
-            cv::rectangle(desk_mat, bound, cv::Scalar(255, 0, 0));
-            cv::circle(desk_mat, cv::Point(x, y), 2, cv::Scalar(255, 255, 0));
-            */
-            return ForegroundDetector::DETECTED;
+    }
+    return results;
+}
+
+int ForegroundDetector::CutForegroundOut(const cv::Mat &source_mat,
+                                         cv::Mat &desk_mat, cv::Rect &bound) {
+    vector<ForegroundImage> foregrounds = CutAllForegroundOut(source_mat);
+    if (foregrounds.empty()) return ForegroundDetector::NOT_DETECTED;
+    int result_id = -1;
+    float min_center_distance = FLT_MAX;
+    for (int i = 0; i < foregrounds.size(); i++) {
+        float foreground_center =
+            foregrounds[i].bound.x + foregrounds[i].bound.width / 2;
+        float center_distance = fabs(foreground_center - source_mat.cols / 2);
+        if (center_distance < min_center_distance) {
+            result_id = i;
+            min_center_distance = center_distance;
         }
     }
-    return ForegroundDetector::NOT_DETECTED;
+    desk_mat = foregrounds[result_id].foreground;
+    bound = foregrounds[result_id].bound;
+    return ForegroundDetector::DETECTED;
 }
+
+int ForegroundDetector::CutForegroundOut(const cv::Mat &source_mat, cv::Mat &desk_mat) {
+    cv::Rect bound;
+    return CutForegroundOut(source_mat, desk_mat, bound);
+}
+
+
 }
 }
