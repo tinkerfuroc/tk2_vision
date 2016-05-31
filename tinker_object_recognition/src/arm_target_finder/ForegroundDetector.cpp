@@ -145,6 +145,8 @@ vector<ForegroundImage> ForegroundDetector::CutAllForegroundOut(const cv::Mat &s
             if (a > min_squaresize_) {
                 ForegroundImage foreground;
                 foreground.foreground = source_mat(contour_bound);
+                foreground.bound = contour_bound;
+                results.push_back(foreground);
             }
         }
     }

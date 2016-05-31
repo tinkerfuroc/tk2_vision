@@ -9,6 +9,8 @@
 #include <actionlib/server/simple_action_server.h>
 #include <tinker_vision_msgs/ObjectAction.h>
 #include <boost/foreach.hpp>
+#include <cfloat>
+#include <cmath>
 #include <map>
 
 using namespace tinker::vision;
@@ -64,6 +66,7 @@ public:
 
     void goalCB() {
         found_count_ = vector<int>(object_classes.size(), 0);
+        found_div_x_ = vector<float>(object_classes.size(), 0);
         object_results_ =
             vector<object_recognition_msgs::RecognizedObjectArray>(
                 object_classes.size());
@@ -97,7 +100,7 @@ public:
         header.stamp = ros::Time::now();
         header.frame_id = "hand";
         BOOST_FOREACH(ClassifyResult &classify_result, classify_results) {
-            ROS_INFO("Found %s", classify_result.name.c_str());
+            ROS_INFO("Found %s at %f", classify_result.name.c_str(), classify_result.div_x);
             object_recognition_msgs::RecognizedObject object;
             object_recognition_msgs::RecognizedObjectArray objects = object_recognition_msgs::RecognizedObjectArray();
             objects.header = header;
@@ -108,18 +111,27 @@ public:
             objects.objects.push_back(object);
             found_count_[classify_result.id]++;
             object_results_[classify_result.id] = objects;
+            found_div_x_[classify_result.id] = fabs(classify_result.div_x);
         }
         count_--;
         if (count_ == 0) {
             int recognized_class_id = 0;
-            int max_found_cnt = 0;
+            float min_div_x_ = FLT_MAX;
+            bool found = false;
             for (int i = 0; i < object_classes.size(); i++) {
-                if (found_count_[i] > accept_count_ && found_count_[i] > max_found_cnt) {
+                ROS_INFO("%s: %d", 
+                        object_classes[i].c_str(),
+                        found_count_[i]);
+                if (found_count_[i] > accept_count_ && found_div_x_[i] < min_div_x_) {
                     recognized_class_id = i;
-                    max_found_cnt = found_count_[i];
+                    found = true;
+                    min_div_x_ = found_div_x_[i];
                 }
             }
-            if (max_found_cnt >= accept_count_) {
+            if (found) {
+                ROS_INFO("Finally found %s at div x %f",
+                        object_classes[recognized_class_id].c_str(),
+                        found_div_x_[recognized_class_id]);
                 act_result_.success = true;
                 act_result_.objects = object_results_[recognized_class_id];
                 // set the action state to succeeded
@@ -159,29 +171,28 @@ public:
         result.found = false;
         // res_mat = HistogramEqualizeRGB(res_mat);
         try {
-        bow_recognition_.CalculateImageDescriptor(image,
-                                                  bow_descriptor);
+            bow_recognition_.CalculateImageDescriptor(image,
+                                                      bow_descriptor);
+            int positive_count = 0;
+
+            for (int i = 0; i < object_classes.size(); i++) {
+                if (svms[i].predict(bow_descriptor) > 0) {
+                    double df_val = svms[i].predict(bow_descriptor, true);
+                    ROS_DEBUG("found df_val %lf for class %s", df_val,
+                              object_classes[i].c_str());
+                    result.name = object_classes[i];
+                    result.id = i;
+                    positive_count++;
+                }
+            }
+            if (positive_count < 1) ROS_DEBUG("No found pair");
+            if (positive_count > 1) ROS_DEBUG("Too much found pair");
+            result.found = (positive_count == 1);
+            return result.found;
         } catch (cv::Exception &e) {
             ROS_DEBUG("failed to build bow descriptor: %s", e.what());
             return false;
         }
-
-        int positive_count = 0;
-
-        for (int i = 0; i < object_classes.size(); i++) {
-            if (svms[i].predict(bow_descriptor) > 0) {
-                double df_val = svms[i].predict(bow_descriptor, true);
-                ROS_DEBUG("found df_val %lf for class %s", df_val,
-                          object_classes[i].c_str());
-                result.name = object_classes[i];
-                result.id = i;
-                positive_count++;
-            }
-        }
-        if (positive_count < 1) ROS_DEBUG("No found pair");
-        if (positive_count > 1) ROS_DEBUG("Too much found pair");
-        result.found = (positive_count == 1);
-        return result.found;
     } 
 
     void DebugPubImage(const cv::Mat &image) {
@@ -222,6 +233,7 @@ private:
     float max_aspect_ratio_tolerance_;
 
     vector<int> found_count_;
+    vector<float> found_div_x_;
     vector<object_recognition_msgs::RecognizedObjectArray> object_results_;
 
     actionlib::SimpleActionServer<tinker_vision_msgs::ObjectAction> as_;
