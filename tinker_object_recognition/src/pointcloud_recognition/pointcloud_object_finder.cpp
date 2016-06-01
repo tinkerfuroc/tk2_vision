@@ -153,11 +153,13 @@ vector<PointCloudPtr> PointCloudObjectFinder::GetObjectPointClouds() {
     for (int i = 0; i < contours.size(); i++) {
         cv::Rect boundrect = cv::boundingRect(cv::Mat(contours[i]));
         if (boundrect.width * boundrect.height < 400) continue;
-        if (boundrect.x > 5 && boundrect.x + boundrect.width + 5 < rgb_image_.cols) {
+        if (boundrect.x > 5 &&
+            boundrect.x + boundrect.width + 5 < rgb_image_.cols) {
             boundrect.x -= 5;
             boundrect.width += 10;
         }
-        if (boundrect.y > 5 && boundrect.y + boundrect.height + 5 < rgb_image_.rows) {
+        if (boundrect.y > 5 &&
+            boundrect.y + boundrect.height + 5 < rgb_image_.rows) {
             boundrect.y -= 5;
             boundrect.height += 10;
         }
@@ -167,12 +169,19 @@ vector<PointCloudPtr> PointCloudObjectFinder::GetObjectPointClouds() {
         cvi.toImageMsg(classify_srv.request.img);
         if (classify_client_.call(classify_srv)) {
             if (classify_srv.response.found) {
-                ROS_INFO("Found %s", classify_srv.response.name.data.c_str());
+                cv::rectangle(rgb_image_, cv::Point(boundrect.x, boundrect.y),
+                              cv::Point(boundrect.x + boundrect.width,
+                                        boundrect.y + boundrect.height),
+                              cv::Scalar(0, 255, 0));
+                cv::putText(rgb_image_, classify_srv.response.name.data,
+                        cv::Point(boundrect.x, boundrect.y), 
+                        cv::FONT_HERSHEY_DUPLEX, 0.5, cv::Scalar(0, 0, 0));
                 object_pointclouds.push_back(BuildPointCloud(
                     depth_image_(boundrect), rgb_image_(boundrect)));
             }
         }
     }
+    cv::imwrite("/home/iarc/result.png", rgb_image_);
     return object_pointclouds;
 }
 
@@ -194,7 +203,7 @@ PointCloudObjectFinder::GetRecognizedObjects() {
     BOOST_FOREACH (PointCloudPtr object_cloud, object_clouds) {
         if (object_cloud->width < 100) continue;
         sprintf(buf, "/home/iarc/kinect_data/%d.pcd", i);
-        //pcl::io::savePCDFile(buf, *object_cloud);
+        // pcl::io::savePCDFile(buf, *object_cloud);
         debug_cloud_ += *object_cloud;
         object_recognition_msgs::RecognizedObject object;
         geometry_msgs::Point center = GetCenter(object_cloud);
