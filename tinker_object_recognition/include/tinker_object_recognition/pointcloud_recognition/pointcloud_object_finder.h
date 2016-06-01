@@ -13,6 +13,7 @@
 #include <object_recognition_msgs/RecognizedObjectArray.h>
 #include <tinker_vision_msgs/FindObjects.h>
 #include <boost/thread/mutex.hpp>
+#include <tinker_vision_msgs/ObjectClassify.h>
 
 namespace tinker {
 namespace vision {
@@ -49,6 +50,7 @@ private:
     ros::ServiceServer start_server_;
     ros::ServiceServer pend_server_;
     ros::ServiceServer find_object_server_;
+    ros::ServiceClient classify_client_;
     bool depth_ready_;
     bool rgb_ready_;
     bool topic_running_;

@@ -8,6 +8,7 @@
 #include <boost/thread/mutex.hpp>
 #include <actionlib/server/simple_action_server.h>
 #include <tinker_vision_msgs/ObjectAction.h>
+#include <tinker_vision_msgs/ObjectClassify.h>
 
 using namespace tinker::vision;
 using std::string;
@@ -40,30 +41,33 @@ public:
         object_classes = bow_recognition_.GetObjectClasses();
         svms = new CvSVM[object_classes.size()];
         sub_ = nh_.subscribe("tk2_com/arm_cam_image", 1,
-                            &BoWClassifyServerNode::ImageCallBack, this);
+                             &BoWClassifyServerNode::ImageCallBack, this);
         pub_ = nh_.advertise<object_recognition_msgs::RecognizedObjectArray>(
             "arm_cam_objects", 1);
-        dbg_pub_ = nh_.advertise<sensor_msgs::Image>("tk2_vision/dbg_handimg", 1);
+        dbg_pub_ =
+            nh_.advertise<sensor_msgs::Image>("tk2_vision/dbg_handimg", 1);
         for (int i = 0; i < object_classes.size(); i++) {
             bow_recognition_.ReadSVMClassifier(svms[i], object_classes[i]);
         }
-        as_.registerGoalCallback(boost::bind(&BoWClassifyServerNode::goalCB, this));
-        as_.registerPreemptCallback(boost::bind(&BoWClassifyServerNode::preemptCB, this));
-        try
-        {
+        as_.registerGoalCallback(
+            boost::bind(&BoWClassifyServerNode::goalCB, this));
+        as_.registerPreemptCallback(
+            boost::bind(&BoWClassifyServerNode::preemptCB, this));
+        try {
             as_.start();
-        }
-        catch(...)
-        {
+        } catch (...) {
             ROS_ERROR("server start failed =_=");
         }
+        classify_service_ = nh_.advertiseService(
+            "object_classify", &BoWClassifyServerNode::ClassifyService, this);
     }
 
-    void goalCB()
-    {
+    void goalCB() {
         found_count_ = vector<int>(object_classes.size(), 0);
-        object_results_ = vector<object_recognition_msgs::RecognizedObjectArray>(object_classes.size());
-        tinker_vision_msgs::ObjectGoalConstPtr goal = as_.acceptNewGoal(); 
+        object_results_ =
+            vector<object_recognition_msgs::RecognizedObjectArray>(
+                object_classes.size());
+        tinker_vision_msgs::ObjectGoalConstPtr goal = as_.acceptNewGoal();
         sample_count_ = goal->sample_count;
         accept_count_ = goal->accept_count;
         if (sample_count_ == 0 && accept_count_ == 0) {
@@ -72,20 +76,16 @@ public:
         }
         count_ = sample_count_;
     }
-    
-    void preemptCB()
-    {
-        as_.setPreempted();
-    } 
+
+    void preemptCB() { as_.setPreempted(); }
 
     void ImageCallBack(const sensor_msgs::Image::ConstPtr &msg) {
-        if (!as_.isActive()) 
-        {
-            //ROS_ERROR("action server is not active =.=");
+        if (!as_.isActive()) {
+            // ROS_ERROR("action server is not active =.=");
             return;
         }
         img_count_++;
-        if (img_count_ % 3 != 0) return; 
+        if (img_count_ % 3 != 0) return;
         ROS_INFO("Classifying");
         cv_bridge::CvImagePtr cv_ptr =
             cv_bridge::toCvCopy(msg, sensor_msgs::image_encodings::BGR8);
@@ -110,9 +110,8 @@ public:
             ROS_INFO("Found %s", result_.name.c_str());
             found_count_[result_.id]++;
             object_results_[result_.id] = objects_;
-        } 
-        if(count_ == 0)
-        {
+        }
+        if (count_ == 0) {
             int recognized_class_count = 0;
             int recognized_class_id = 0;
             for (int i = 0; i < object_classes.size(); i++) {
@@ -126,12 +125,11 @@ public:
                 act_result_.objects = object_results_[recognized_class_id];
                 // set the action state to succeeded
                 as_.setSucceeded(act_result_);
-            }
-            else
-            {
+            } else {
                 act_result_.success = false;
-                act_result_.objects = object_recognition_msgs::RecognizedObjectArray();
-                //set the action state to aborted
+                act_result_.objects =
+                    object_recognition_msgs::RecognizedObjectArray();
+                // set the action state to aborted
                 as_.setAborted(act_result_);
             }
         }
@@ -157,7 +155,7 @@ public:
                 as_.publishFeedback(act_feedback_);
 
                 cv::Mat bow_descriptor;
-                //res_mat = HistogramEqualizeRGB(res_mat);
+                // res_mat = HistogramEqualizeRGB(res_mat);
                 bow_recognition_.CalculateImageDescriptor(res_mat,
                                                           bow_descriptor);
 
@@ -177,7 +175,7 @@ public:
                 if (positive_count > 1) ROS_DEBUG("Too much found pair");
                 result.found = (positive_count == 1);
                 if (result.found) {
-                    //ROS_INFO("Found %s", result.name.c_str());
+                    // ROS_INFO("Found %s", result.name.c_str());
                     double center_x = bound.x + bound.width / 2.;
                     double bottom_y = bound.y + bound.height;
                     result.div_x = center_x - image.cols / 2.;
@@ -188,6 +186,17 @@ public:
             ROS_WARN("failed to recognize: %s", e.what());
         }
         return result;
+    }
+
+    bool ClassifyService(tinker_vision_msgs::ObjectClassify::Request &req,
+                         tinker_vision_msgs::ObjectClassify::Response &res) {
+        cv_bridge::CvImagePtr cv_ptr =
+            cv_bridge::toCvCopy(req.img, sensor_msgs::image_encodings::BGR8);
+        cv::Mat img = cv_ptr->image;
+        ClassifyResult result = Classify(img);
+        res.found = result.found;
+        res.name.data = result.name;
+        return true;
     }
 
     ~BoWClassifyServerNode() {
@@ -212,18 +221,20 @@ private:
     int sample_count_;
     int accept_count_;
     int img_count_;
-    
+
     double entropy_threshold_;
     int filter_size_;
     float max_aspect_ratio_tolerance_;
-    
+
     vector<int> found_count_;
     vector<object_recognition_msgs::RecognizedObjectArray> object_results_;
-    
+
     actionlib::SimpleActionServer<tinker_vision_msgs::ObjectAction> as_;
     tinker_vision_msgs::ObjectFeedback act_feedback_;
     tinker_vision_msgs::ObjectResult act_result_;
-    
+
+    ros::ServiceServer classify_service_;
+
     ros::Publisher dbg_pub_;
 };
 

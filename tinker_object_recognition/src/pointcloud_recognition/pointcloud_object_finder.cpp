@@ -40,6 +40,8 @@ PointCloudObjectFinder::PointCloudObjectFinder()
     find_object_server_ =
         nh.advertiseService("kinect_find_objects",
                             &PointCloudObjectFinder::FindObjectService, this);
+    classify_client_ =
+        nh.serviceClient<tinker_vision_msgs::ObjectClassify>("object_classify");
 }
 
 bool PointCloudObjectFinder::PointCloudObjectFinder::StartService(
@@ -133,16 +135,37 @@ vector<PointCloudPtr> PointCloudObjectFinder::GetObjectPointClouds() {
     cv::cvtColor(rgb_image_, gray_image, CV_BGR2GRAY);
     cv::Mat mask = LineFilterMask(gray_image, 3.5);
     ApplyMask(mask, depth_image_, cv::Vec3s(0, 0, 0));
-    ApplyMask(mask, rgb_image_, cv::Vec3b(0, 0, 0));
+    // ApplyMask(mask, rgb_image_, cv::Vec3b(0, 0, 0));
     cv::Mat entropy_mask = EntropyFilterMask(gray_image, 0.4, 5, 2);
     DilateImage(entropy_mask, 4);
     ErodeImage(entropy_mask, 6);
     DilateImage(entropy_mask, 6);
     ApplyMask(entropy_mask, depth_image_, cv::Vec3s(0, 0, 0));
-    ApplyMask(entropy_mask, rgb_image_, cv::Vec3b(0, 0, 0));
-    PointCloudPtr filtered_cloud = BuildPointCloud(depth_image_, rgb_image_, 0.3, 2.5);
-    ClusterDivider divider(filtered_cloud);
-    return divider.GetDividedPointClouds();
+    // ApplyMask(entropy_mask, rgb_image_, cv::Vec3b(0, 0, 0));
+    ApplyMask<unsigned char>(entropy_mask, mask, 0);
+
+    vector<vector<cv::Point> > contours;
+    vector<cv::Vec4i> hierarchy;
+
+    cv::findContours(mask, contours, hierarchy, CV_RETR_TREE,
+                     CV_CHAIN_APPROX_SIMPLE);
+    vector<PointCloudPtr> object_pointclouds;
+    for (int i = 0; i < contours.size(); i++) {
+        cv::Rect boundrect = cv::boundingRect(cv::Mat(contours[i]));
+        if (boundrect.width * boundrect.height < 200) continue;
+        cv::Mat object_img = rgb_image_(boundrect);
+        tinker_vision_msgs::ObjectClassify classify_srv;
+        cv_bridge::CvImage cvi(std_msgs::Header(), "bgr8", object_img);
+        cvi.toImageMsg(classify_srv.request.img);
+        if (classify_client_.call(classify_srv)) {
+            if (classify_srv.response.found) {
+                ROS_INFO("Found %s", classify_srv.response.name.data.c_str());
+                object_pointclouds.push_back(BuildPointCloud(
+                    depth_image_(boundrect), rgb_image_(boundrect)));
+            }
+        }
+    }
+    return object_pointclouds;
 }
 
 object_recognition_msgs::RecognizedObjectArray
@@ -166,7 +189,8 @@ PointCloudObjectFinder::GetRecognizedObjects() {
         debug_cloud_ += *object_cloud;
         object_recognition_msgs::RecognizedObject object;
         geometry_msgs::Point center = GetCenter(object_cloud);
-        ROS_INFO("size %d, center at %f %f %f", object_cloud->width, center.x, center.y, center.z);
+        ROS_INFO("size %d, center at %f %f %f", object_cloud->width, center.x,
+                 center.y, center.z);
         sensor_msgs::PointCloud2 cloud = ToROSCloud(*object_cloud);
         object.header = header;
         object.pose.header = header;
