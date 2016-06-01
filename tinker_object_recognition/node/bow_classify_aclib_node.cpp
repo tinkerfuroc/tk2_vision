@@ -9,17 +9,22 @@
 #include <actionlib/server/simple_action_server.h>
 #include <tinker_vision_msgs/ObjectAction.h>
 #include <tinker_vision_msgs/ObjectClassify.h>
+#include <boost/foreach.hpp>
+#include <cfloat>
+#include <cmath>
+#include <map>
 
 using namespace tinker::vision;
 using std::string;
 using std::vector;
+using std::map;
 
 struct ClassifyResult {
     bool found;
     int id;
     string name;
-    double div_x;
-    double div_y;
+    float div_x;
+    float div_y;
 };
 
 class BoWClassifyServerNode {
@@ -30,6 +35,7 @@ public:
           svms(NULL),
           debug_seq_(0),
           seq_(0),
+          save_seq_(0),
           img_count_(0),
           as_(nh_, "arm_find_objects", false) {
         detector_.setParam(private_nh_);
@@ -64,6 +70,7 @@ public:
 
     void goalCB() {
         found_count_ = vector<int>(object_classes.size(), 0);
+        found_div_x_ = vector<float>(object_classes.size(), 0);
         object_results_ =
             vector<object_recognition_msgs::RecognizedObjectArray>(
                 object_classes.size());
@@ -75,6 +82,7 @@ public:
             accept_count_ = 5;
         }
         count_ = sample_count_;
+        seq_++;
     }
 
     void preemptCB() { as_.setPreempted(); }
@@ -90,37 +98,44 @@ public:
         cv_bridge::CvImagePtr cv_ptr =
             cv_bridge::toCvCopy(msg, sensor_msgs::image_encodings::BGR8);
         cv::Mat cam_mat = cv_ptr->image;
-        result_ = Classify(cam_mat);
-        objects_ = object_recognition_msgs::RecognizedObjectArray();
+        vector<ClassifyResult> classify_results = DetectObject(cam_mat);
         std_msgs::Header header;
-        header.seq = seq_++;
+        header.seq = seq_;
         header.stamp = ros::Time::now();
         header.frame_id = "hand";
-        objects_.header = header;
-        if (result_.found) {
+        BOOST_FOREACH(ClassifyResult &classify_result, classify_results) {
+            ROS_INFO("Found %s at %f", classify_result.name.c_str(), classify_result.div_x);
             object_recognition_msgs::RecognizedObject object;
+            object_recognition_msgs::RecognizedObjectArray objects = object_recognition_msgs::RecognizedObjectArray();
+            objects.header = header;
             object.header = header;
-            object.type.key = result_.name;
-            object.pose.pose.pose.position.x = result_.div_x;
-            object.pose.pose.pose.position.y = result_.div_y;
-            objects_.objects.push_back(object);
+            object.type.key = classify_result.name;
+            object.pose.pose.pose.position.x = classify_result.div_x;
+            object.pose.pose.pose.position.y = classify_result.div_y;
+            objects.objects.push_back(object);
+            found_count_[classify_result.id]++;
+            object_results_[classify_result.id] = objects;
+            found_div_x_[classify_result.id] = fabs(classify_result.div_x);
         }
         count_--;
-        if (result_.found) {
-            ROS_INFO("Found %s", result_.name.c_str());
-            found_count_[result_.id]++;
-            object_results_[result_.id] = objects_;
-        }
         if (count_ == 0) {
-            int recognized_class_count = 0;
             int recognized_class_id = 0;
+            float min_div_x_ = FLT_MAX;
+            bool found = false;
             for (int i = 0; i < object_classes.size(); i++) {
-                if (found_count_[i] > accept_count_) {
+                ROS_INFO("%s: %d", 
+                        object_classes[i].c_str(),
+                        found_count_[i]);
+                if (found_count_[i] > accept_count_ && found_div_x_[i] < min_div_x_) {
                     recognized_class_id = i;
-                    recognized_class_count++;
+                    found = true;
+                    min_div_x_ = found_div_x_[i];
                 }
             }
-            if (recognized_class_count == 1) {
+            if (found) {
+                ROS_INFO("Finally found %s at div x %f",
+                        object_classes[recognized_class_id].c_str(),
+                        found_div_x_[recognized_class_id]);
                 act_result_.success = true;
                 act_result_.objects = object_results_[recognized_class_id];
                 // set the action state to succeeded
@@ -135,57 +150,69 @@ public:
         }
     }
 
-    ClassifyResult Classify(const cv::Mat &image) {
-        ClassifyResult result;
-        result.found = false;
+    vector<ClassifyResult> DetectObject(const cv::Mat &image) {
+        vector<ClassifyResult> results;
         cv::Mat res_mat;
         cv::Rect bound;
+        vector<ForegroundImage> foregrounds = detector_.CutAllForegroundOut(image);
+        BOOST_FOREACH(ForegroundImage &foreground, foregrounds) {
+            DebugPubImage(foreground.foreground);
+            ClassifyResult result;
+            if (Classify(foreground.foreground, result)) {
+                cv::Rect &bound = foreground.bound;
+                float center_x = bound.x + bound.width / 2.;
+                float bottom_y = bound.y + bound.height;
+                result.div_x = center_x - image.cols / 2.;
+                result.div_y = bottom_y - image.rows / 2.;
+                results.push_back(result);
+            }
+        }
+        return results;
+    }
+
+    bool Classify(const cv::Mat image, ClassifyResult &result) {
+        char filename[200];
+        sprintf(filename, "/home/iarc/archieve/%d.png", save_seq_);
+        cv::imwrite(filename, image);
+        save_seq_++;
+        cv::Mat bow_descriptor;
+        result.found = false;
+        // res_mat = HistogramEqualizeRGB(res_mat);
         try {
-            int find = detector_.CutForegroundOut(image, res_mat, bound);
-            if (find == tinker::vision::ForegroundDetector::DETECTED) {
-                // publish it
-                sensor_msgs::Image img;
-                cv_bridge::CvImage cvi(std_msgs::Header(), "bgr8", res_mat);
-                cvi.header.seq = debug_seq_++;
-                cvi.header.frame_id = "hand";
-                cvi.header.stamp = ros::Time::now();
-                cvi.toImageMsg(img);
-                act_feedback_.handimg = img;
-                dbg_pub_.publish(img);
-                as_.publishFeedback(act_feedback_);
+            bow_recognition_.CalculateImageDescriptor(image,
+                                                      bow_descriptor);
+            int positive_count = 0;
 
-                cv::Mat bow_descriptor;
-                // res_mat = HistogramEqualizeRGB(res_mat);
-                bow_recognition_.CalculateImageDescriptor(res_mat,
-                                                          bow_descriptor);
-
-                int positive_count = 0;
-
-                for (int i = 0; i < object_classes.size(); i++) {
-                    if (svms[i].predict(bow_descriptor) > 0) {
-                        double df_val = svms[i].predict(bow_descriptor, true);
-                        ROS_DEBUG("found df_val %lf for class %s", df_val,
-                                  object_classes[i].c_str());
-                        result.name = object_classes[i];
-                        result.id = i;
-                        positive_count++;
-                    }
-                }
-                if (positive_count < 1) ROS_DEBUG("No found pair");
-                if (positive_count > 1) ROS_DEBUG("Too much found pair");
-                result.found = (positive_count == 1);
-                if (result.found) {
-                    // ROS_INFO("Found %s", result.name.c_str());
-                    double center_x = bound.x + bound.width / 2.;
-                    double bottom_y = bound.y + bound.height;
-                    result.div_x = center_x - image.cols / 2.;
-                    result.div_y = bottom_y - image.rows / 2.;
+            for (int i = 0; i < object_classes.size(); i++) {
+                if (svms[i].predict(bow_descriptor) > 0) {
+                    double df_val = svms[i].predict(bow_descriptor, true);
+                    ROS_DEBUG("found df_val %lf for class %s", df_val,
+                              object_classes[i].c_str());
+                    result.name = object_classes[i];
+                    result.id = i;
+                    positive_count++;
                 }
             }
+            if (positive_count < 1) ROS_DEBUG("No found pair");
+            if (positive_count > 1) ROS_DEBUG("Too much found pair");
+            result.found = (positive_count == 1);
+            return result.found;
         } catch (cv::Exception &e) {
-            ROS_WARN("failed to recognize: %s", e.what());
+            ROS_DEBUG("failed to build bow descriptor: %s", e.what());
+            return false;
         }
-        return result;
+    } 
+
+    void DebugPubImage(const cv::Mat &image) {
+        sensor_msgs::Image img;
+        cv_bridge::CvImage cvi(std_msgs::Header(), "bgr8", image);
+        cvi.header.seq = debug_seq_++;
+        cvi.header.frame_id = "hand";
+        cvi.header.stamp = ros::Time::now();
+        cvi.toImageMsg(img);
+        act_feedback_.handimg = img;
+        dbg_pub_.publish(img);
+        as_.publishFeedback(act_feedback_);
     }
 
     bool ClassifyService(tinker_vision_msgs::ObjectClassify::Request &req,
@@ -193,7 +220,8 @@ public:
         cv_bridge::CvImagePtr cv_ptr =
             cv_bridge::toCvCopy(req.img, sensor_msgs::image_encodings::BGR8);
         cv::Mat img = cv_ptr->image;
-        ClassifyResult result = Classify(img);
+        ClassifyResult result;
+        Classify(img, result);
         res.found = result.found;
         res.name.data = result.name;
         return true;
@@ -213,10 +241,9 @@ private:
     ros::Subscriber sub_;
     vector<string> object_classes;
     CvSVM *svms;
-    ClassifyResult result_;
-    object_recognition_msgs::RecognizedObjectArray objects_;
     int debug_seq_;
     int seq_;
+    int save_seq_;
     int count_;
     int sample_count_;
     int accept_count_;
@@ -227,6 +254,7 @@ private:
     float max_aspect_ratio_tolerance_;
 
     vector<int> found_count_;
+    vector<float> found_div_x_;
     vector<object_recognition_msgs::RecognizedObjectArray> object_results_;
 
     actionlib::SimpleActionServer<tinker_vision_msgs::ObjectAction> as_;

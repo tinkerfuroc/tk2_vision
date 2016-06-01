@@ -15,6 +15,11 @@
 namespace tinker {
 namespace vision {
 
+struct ForegroundImage {
+    cv::Mat foreground;
+    cv::Rect bound;
+};
+
 class ForegroundDetector {
 public:
     ForegroundDetector() {}
@@ -28,12 +33,13 @@ public:
     int CutForegroundOut(const cv::Mat &source_mat, cv::Mat &desk_mat,
                          cv::Rect &bound);
     int CutForegroundOut(const cv::Mat &source_mat, cv::Mat &desk_mat);
+
+    std::vector<ForegroundImage> CutAllForegroundOut(const cv::Mat &source_mat);
                          
     const static int DETECTED = 0;
     const static int NOT_DETECTED = -1;
     
-    void setParam(ros::NodeHandle private_nh_)
-    {
+    void setParam(ros::NodeHandle private_nh_) {
         XmlRpc::XmlRpcValue foreground_detector_param;
         private_nh_.getParam("foreground_detector_param", foreground_detector_param);
         ROS_ASSERT(foreground_detector_param.size() > 0);
@@ -59,6 +65,7 @@ private:
     void DivideMaskByY(cv::Mat &mask_mat);
     void BuildImageByMask(const cv::Mat &source_mat, cv::Mat &desk_mat,
                           cv::Mat mask_mat);
+
     // parameters.
     int filter_size_;
     double entropy_threshold_;

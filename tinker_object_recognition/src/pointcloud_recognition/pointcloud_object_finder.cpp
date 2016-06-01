@@ -152,7 +152,15 @@ vector<PointCloudPtr> PointCloudObjectFinder::GetObjectPointClouds() {
     vector<PointCloudPtr> object_pointclouds;
     for (int i = 0; i < contours.size(); i++) {
         cv::Rect boundrect = cv::boundingRect(cv::Mat(contours[i]));
-        if (boundrect.width * boundrect.height < 200) continue;
+        if (boundrect.width * boundrect.height < 400) continue;
+        if (boundrect.x > 5 && boundrect.x + boundrect.width + 5 < rgb_image_.cols) {
+            boundrect.x -= 5;
+            boundrect.width += 10;
+        }
+        if (boundrect.y > 5 && boundrect.y + boundrect.height + 5 < rgb_image_.rows) {
+            boundrect.y -= 5;
+            boundrect.height += 10;
+        }
         cv::Mat object_img = rgb_image_(boundrect);
         tinker_vision_msgs::ObjectClassify classify_srv;
         cv_bridge::CvImage cvi(std_msgs::Header(), "bgr8", object_img);
@@ -184,8 +192,9 @@ PointCloudObjectFinder::GetRecognizedObjects() {
     pcl::PointCloud<pcl::PointXYZRGB> debug_cloud_;
     ROS_INFO("found %lu objects", object_clouds.size());
     BOOST_FOREACH (PointCloudPtr object_cloud, object_clouds) {
+        if (object_cloud->width < 100) continue;
         sprintf(buf, "/home/iarc/kinect_data/%d.pcd", i);
-        pcl::io::savePCDFile(buf, *object_cloud);
+        //pcl::io::savePCDFile(buf, *object_cloud);
         debug_cloud_ += *object_cloud;
         object_recognition_msgs::RecognizedObject object;
         geometry_msgs::Point center = GetCenter(object_cloud);

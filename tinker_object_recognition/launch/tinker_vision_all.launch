@@ -1,0 +1,6 @@
+<launch>
+    <include file="$(find k2_client)/launch/k2_client.launch"/>
+    <include file="$(find tinker_object_recognition)/launch/tinker_object_recognition.launch"/>
+    <include file="$(find tinker_object_recognition)/launch/tinker_bow_aclib_run.launch"/>
+
+</launch>
