@@ -158,10 +158,10 @@ vector<PointCloudPtr> PointCloudObjectFinder::GetObjectPointClouds() {
             boundrect.x -= 5;
             boundrect.width += 10;
         }
-        if (boundrect.y > 5 &&
-            boundrect.y + boundrect.height + 5 < rgb_image_.rows) {
-            boundrect.y -= 5;
-            boundrect.height += 10;
+        if (boundrect.y > 10 &&
+            boundrect.y + boundrect.height + 10 < rgb_image_.rows) {
+            boundrect.y -= 10;
+            boundrect.height += 20;
         }
         cv::Mat object_img = rgb_image_(boundrect);
         tinker_vision_msgs::ObjectClassify classify_srv;

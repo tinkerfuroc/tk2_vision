@@ -169,6 +169,7 @@ add_executable(tinker_pointcloud_recognition_node
 )
 
 add_executable(collect_sample_node ./node/collect_sample_node.cpp ${SRC_FILE})
+add_executable(kinect_collect_sample ./node/kinect_collect_sample_node.cpp ${SRC_FILE})
 add_executable(bow_train_node ./node/bow_train_node.cpp ${SRC_FILE})
 add_executable(bow_classify_aclib_node ./node/bow_classify_aclib_node.cpp ${SRC_FILE})
 add_executable(bow_classify_service_node ./node/bow_classify_service_node.cpp ${SRC_FILE})
@@ -193,6 +194,7 @@ target_link_libraries(collect_sample_node
 target_link_libraries(bow_train_node ${catkin_LIBRARIES} ${OpenCV_LIBS} ${PCL_LIBRARIES})
 target_link_libraries(bow_classify_aclib_node ${catkin_LIBRARIES} ${OpenCV_LIBS} ${PCL_LIBRARIES})
 target_link_libraries(bow_classify_service_node ${catkin_LIBRARIES} ${OpenCV_LIBS} ${PCL_LIBRARIES})
+target_link_libraries(kinect_collect_sample ${catkin_LIBRARIES} ${OpenCV_LIBS})
 #############
 ## Install ##
 #############
