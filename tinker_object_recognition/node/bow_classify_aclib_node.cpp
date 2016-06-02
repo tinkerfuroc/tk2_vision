@@ -225,7 +225,6 @@ private:
     tinker_vision_msgs::ObjectFeedback act_feedback_;
     tinker_vision_msgs::ObjectResult act_result_;
     
-    ros::Publisher dbg_pub_;
 };
 
 int main(int argc, char *argv[]) {

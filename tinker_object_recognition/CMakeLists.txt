@@ -111,10 +111,10 @@ find_package(catkin REQUIRED COMPONENTS
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
-    INCLUDE_DIRS include
-#  LIBRARIES tinker_object_recognition
+   INCLUDE_DIRS include
+   LIBRARIES tinker_object_recognition
    CATKIN_DEPENDS object_recognition_msgs roscpp rospy tf message_runtime tinker_camera tinker_vision_msgs
-#  DEPENDS system_lib
+   DEPENDS system_lib boost opencv pcl
 )
 
 ###########
@@ -153,9 +153,9 @@ SET(SRC_FILE
 )
 
 ## Declare a C++ library
-# add_library(tinker_object_recognition
-#   src/${PROJECT_NAME}/tinker_object_recognition.cpp
-# )
+add_library(tinker_object_recognition
+    ${SRC_FILE}
+)
 
 ## Add cmake target dependencies of the library
 ## as an example, code may need to be generated before libraries
@@ -178,6 +178,11 @@ add_executable(bow_classify_service_node ./node/bow_classify_service_node.cpp ${
 # add_dependencies(tinker_object_recognition_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Specify libraries to link a library or executable target against
+target_link_libraries(tinker_object_recognition
+    ${catkin_LIBRARIES}
+    ${OpenCV_LIBS}
+    ${PCL_LIBRARIES}
+)
 target_link_libraries(tinker_pointcloud_recognition_node
     ${catkin_LIBRARIES}
     ${OpenCV_LIBS}

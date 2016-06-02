@@ -1,4 +1,5 @@
 #include "tinker_human_recognition/cmt_track/CMT.h"
+#include "tinker_object_recognition/utilities.h"
 
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
@@ -47,7 +48,7 @@ public:
             cv::Mat hist = getHist(cam_mat, rect);
             float emd = compare_histograms(hist, start_histogram_);
             ROS_INFO("emd: %f", emd);
-            is_same_ = (emd < emd_threshold_);
+            is_same_ = (emd < (float)emd_threshold_);
             
             //debug image display
             Draw(cam_mat);
@@ -98,12 +99,14 @@ public:
         int rectdownY = min(source.rows, bound.y+bound.height);
         int rectleftX = max(bound.x, 0);
         int rectrightX = min(source.cols, bound.x+bound.width);
-        ROS_INFO("fuck %d %d %d %d", rectleftX, rectupY, rectrightX - rectleftX, rectdownY - rectupY);
+        //ROS_INFO("fuck %d %d %d %d", rectleftX, rectupY, rectrightX - rectleftX, rectdownY - rectupY);
         cv::Rect rect(rectleftX, rectupY, rectrightX - rectleftX, rectdownY - rectupY);
         
         cv::Mat roi(source, rect);
         cv::Mat norm_mat;
         cv::resize(roi, norm_mat, cv::Size(100, 100));
+        
+        norm_mat = tinker::vision::HistogramEqualizeRGB(norm_mat);
         
 	    const int dims = 1;
 	    const int sizes[] = { 256, 256, 256};
@@ -130,6 +133,7 @@ public:
 
 	    // Normalize the histogram
 	    normalize(hist_t, hist_t, 1.0, 0.0, cv::NORM_L1);
+	    
 	    return hist_t;
     }
 
@@ -181,8 +185,13 @@ public:
     }
 
     CMT_track_node()
-        : init_done_(false), emd_threshold_(20)
+        : private_nh_("~"), init_done_(false)
     {
+        XmlRpc::XmlRpcValue CMT_track_params;
+        private_nh_.getParam("CMT_track_params", CMT_track_params);
+        ROS_ASSERT(CMT_track_params.size() > 0);
+        ROS_ASSERT(CMT_track_params.hasMember("emd_threshold"));
+        emd_threshold_ = (double)CMT_track_params["emd_threshold"];
         img_sub_ = nh_.subscribe("head/kinect2/rgb/image_color", 1,
             &CMT_track_node::ImageCallBack, this);
         k2_body_sub_ = nh_.subscribe("head/kinect2/bodyArray", 1,
@@ -200,9 +209,10 @@ protected:
     cv::Mat start_histogram_;
     bool init_done_;
     
-    float emd_threshold_;
+    double emd_threshold_;
     
     ros::NodeHandle nh_;
+    ros::NodeHandle private_nh_;
     ros::Subscriber img_sub_;
     ros::Subscriber k2_body_sub_;
     ros::Publisher dbg_pub_;

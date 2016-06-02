@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 2.8.3)
 project(tinker_human_recognition)
 
 find_package(OpenCV REQUIRED)
+find_package(PCL 1.7 REQUIRED)
 find_package(Boost REQUIRED)
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
@@ -13,6 +14,7 @@ find_package(catkin REQUIRED COMPONENTS
   cv_bridge
   tf
   tinker_vision_msgs
+  tinker_object_recognition
   k2_client
 )
 
@@ -123,6 +125,15 @@ include_directories(
   include
   ${catkin_INCLUDE_DIRS}
   ${OpenCV_INCLUDE_DIRS}
+  ${PCL_INCLUDE_DIRS}
+)
+
+LINK_DIRECTORIES(
+  ${PCL_LIBRARY_DIRS}
+)
+
+ADD_DEFINITIONS(
+  ${PCL_DEFINITIONS}
 )
 
 SET(SRC_FILE
