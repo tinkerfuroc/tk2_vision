@@ -25,6 +25,7 @@ struct ClassifyResult {
     string name;
     float div_x;
     float div_y;
+    double df_val;
 };
 
 class BoWClassifyServerNode {
@@ -171,10 +172,6 @@ public:
     }
 
     bool Classify(const cv::Mat image, ClassifyResult &result) {
-        char filename[200];
-        sprintf(filename, "/home/iarc/archieve/%d.png", save_seq_);
-        cv::imwrite(filename, image);
-        save_seq_++;
         cv::Mat bow_descriptor;
         result.found = false;
         // res_mat = HistogramEqualizeRGB(res_mat);
@@ -186,10 +183,11 @@ public:
             for (int i = 0; i < object_classes.size(); i++) {
                 if (svms[i].predict(bow_descriptor) > 0) {
                     double df_val = svms[i].predict(bow_descriptor, true);
-                    ROS_DEBUG("found df_val %lf for class %s", df_val,
+                    ROS_INFO("found df_val %lf for class %s", df_val,
                               object_classes[i].c_str());
                     result.name = object_classes[i];
                     result.id = i;
+                    result.df_val = df_val;
                     positive_count++;
                 }
             }
@@ -224,6 +222,7 @@ public:
         Classify(img, result);
         res.found = result.found;
         res.name.data = result.name;
+        res.df_val = result.df_val;
         return true;
     }
 

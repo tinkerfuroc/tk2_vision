@@ -71,6 +71,22 @@ vector<float> BuildEntropyTable(int filter_size) {
     return entropy_table;
 }
 
+cv::Mat DepthFilterMask(const cv::Mat & loc_image, float min_depth, float max_depth) {
+    cv::Mat mask(loc_image.rows, loc_image.cols, CV_8UC1);
+    for (int i = 0; i < loc_image.rows; i++) {
+        for (int j = 0; j < loc_image.cols; j++) {
+            cv::Vec3s location = loc_image.at<cv::Vec3s>(i, j);
+            float x = ((float)location[2]) / 1000.;
+            if (min_depth < x && x < max_depth) {
+                mask.at<unsigned char>(i, j) = 255;
+            } else {
+                mask.at<unsigned char>(i, j) = 0;
+            }
+        }
+    }
+    return mask;
+}
+
 void DilateImage(cv::Mat & image, int kernel_size) {
     cv::Mat kernel = cv::getStructuringElement(cv::MORPH_ELLIPSE,
         cv::Size(2 * kernel_size + 1, 2 * kernel_size + 1),

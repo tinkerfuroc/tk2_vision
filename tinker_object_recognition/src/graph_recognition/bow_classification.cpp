@@ -236,6 +236,7 @@ void BoWRecognition::SetSVMParams(CvSVMParams& svmParams, CvMat& class_wts_cv,
 
     svmParams.svm_type = CvSVM::C_SVC;
     svmParams.kernel_type = CvSVM::RBF;
+    svmParams.C = 8.0;
     if (balanceClasses) {
         cv::Mat class_wts(2, 1, CV_32FC1);
         // The first training sample determines the '+1' class internally, even

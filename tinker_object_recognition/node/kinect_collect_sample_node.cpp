@@ -65,15 +65,20 @@ public:
         private_nh_.getParam("image_class_info", image_class_info);
         ROS_ASSERT(image_class_info.size() > 0);
         ROS_ASSERT(image_class_info.hasMember("object_classes"));
-        ROS_ASSERT(image_class_info.hasMember("image_num"));
+        ROS_ASSERT(image_class_info.hasMember("collect_num"));
+        ROS_ASSERT(image_class_info.hasMember("start_num"));
         ROS_ASSERT(image_class_info.hasMember("image_folder_name"));
         ROS_ASSERT(image_class_info["image_num"].getType() ==
                    XmlRpc::XmlRpcValue::TypeInt);
         ROS_ASSERT(image_class_info["object_classes"].getType() ==
                    XmlRpc::XmlRpcValue::TypeArray);
+        ROS_ASSERT(image_class_info["object_classes"].getType() ==
+                   XmlRpc::XmlRpcValue::TypeArray);
         filepath_ = std::string(image_class_info["image_folder_name"]);
         ROS_ASSERT(filepath_.size() > 0);
-        object_num_ = (int)image_class_info["image_num"];
+        object_num_ = (int)image_class_info["collect_num"];
+        start_counter_ = (int)image_class_info["start_num"];
+        no_counter_ = start_counter_;
         XmlRpc::XmlRpcValue object_classes = image_class_info["object_classes"];
         for (int i = 0; i < object_classes.size(); i++) {
             ROS_ASSERT(object_classes[i].getType() ==
@@ -93,6 +98,8 @@ public:
         cv_bridge::CvImagePtr cv_ptr =
             cv_bridge::toCvCopy(msg, sensor_msgs::image_encodings::BGR8);
         cv::Mat cam_mat = cv_ptr->image;
+        //cv::resize(cam_mat, cam_mat, cv::Size(), 0.5, 0.5,
+        //       cv::INTER_NEAREST);
         img_counter_++;
         int key = cvWaitKey(100);
         if (!finished_ && state_ == COLLECTING) {
@@ -101,18 +108,15 @@ public:
             bound.y = from_y_;
             bound.width = to_x_ - from_x_;
             bound.height = to_y_ - from_y_;
-            string filename = pngNameWrapper();
-            string filepath = filepath_ + "/" + filename;
-            if (img_counter_ % 5 == 0) {
-                imwrite(filepath, cam_mat(bound));
-                ROS_INFO("%s saved", filename.c_str());
-            }
+            string filepath = filepath_ + "/" + pngNameWrapper();
+            imwrite(filepath, cam_mat(bound));
+            ROS_INFO("%s saved", pngNameWrapper().c_str());
+            no_counter_++;
             cv::rectangle(cam_mat, cv::Point(from_x_, from_y_), 
                     cv::Point(to_x_, to_y_), cv::Scalar(0, 255, 0));
             // next object
-            no_counter_++;
-            if (no_counter_ == object_num_) {
-                no_counter_ = 0;
+            if (no_counter_ - start_counter_ == object_num_) {
+                no_counter_ = start_counter_;
                 class_counter_++;
                 if (class_counter_ == objectclasses_.size()) {
                     finished_ = true;
@@ -120,9 +124,8 @@ public:
                     return;
                 }
                 state_ = WAITING;
+                ROS_INFO("Waiting for %s", pngNameWrapper().c_str());
             }
-            filename = pngNameWrapper();
-            ROS_INFO("waiting for %s ...", filename.c_str());
         } 
         cv::imshow("kinect", cam_mat);
         return;
@@ -143,6 +146,7 @@ private:
     string filepath_;
 
     CollectState state_;
+    int start_counter_;
     int no_counter_;
     int class_counter_;
     int img_counter_;

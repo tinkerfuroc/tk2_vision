@@ -128,21 +128,27 @@ bool PointCloudObjectFinder::FindObjectService(
 }
 
 vector<PointCloudPtr> PointCloudObjectFinder::GetObjectPointClouds() {
-    cv::resize(depth_image_, depth_image_, cv::Size(), 0.5, 0.5,
-               cv::INTER_NEAREST);
-    cv::resize(rgb_image_, rgb_image_, cv::Size(), 0.5, 0.5, cv::INTER_NEAREST);
+    cv::Mat rgb_image;
+    cv::resize(depth_image_, depth_image_, cv::Size(), 0.5, 0.5);
+    cv::resize(rgb_image_, rgb_image, cv::Size(), 0.5, 0.5);
     cv::Mat gray_image;
-    cv::cvtColor(rgb_image_, gray_image, CV_BGR2GRAY);
-    cv::Mat mask = LineFilterMask(gray_image, 3.5);
+    cv::cvtColor(rgb_image, gray_image, CV_BGR2GRAY);
+    //cv::Mat mask = LineFilterMask(gray_image, 3.5);
+    //ApplyMask(mask, depth_image_, cv::Vec3s(0, 0, 0));
+    //cv::imwrite("/home/iarc/line_mask.png", mask);
+
+    cv::Mat mask = EntropyFilterMask(gray_image, 0.4, 5, 2);
+    cv::imwrite("/home/iarc/entropy_mask.png", mask);
+    //ApplyMask<unsigned char>(entropy_mask, mask, 0);
+
+    cv::Mat depth_mask = DepthFilterMask(depth_image_, 0.3, 2.0);
+    ApplyMask<unsigned char>(depth_mask, mask, 0);
+    cv::imwrite("/home/iarc/depth_mask.png", mask);
+    DilateImage(mask, 4);
+    ErodeImage(mask, 6);
+    DilateImage(mask, 6);
+    cv::imwrite("/home/iarc/mask.png", mask);
     ApplyMask(mask, depth_image_, cv::Vec3s(0, 0, 0));
-    // ApplyMask(mask, rgb_image_, cv::Vec3b(0, 0, 0));
-    cv::Mat entropy_mask = EntropyFilterMask(gray_image, 0.4, 5, 2);
-    DilateImage(entropy_mask, 4);
-    ErodeImage(entropy_mask, 6);
-    DilateImage(entropy_mask, 6);
-    ApplyMask(entropy_mask, depth_image_, cv::Vec3s(0, 0, 0));
-    // ApplyMask(entropy_mask, rgb_image_, cv::Vec3b(0, 0, 0));
-    ApplyMask<unsigned char>(entropy_mask, mask, 0);
 
     vector<vector<cv::Point> > contours;
     vector<cv::Vec4i> hierarchy;
@@ -153,35 +159,39 @@ vector<PointCloudPtr> PointCloudObjectFinder::GetObjectPointClouds() {
     for (int i = 0; i < contours.size(); i++) {
         cv::Rect boundrect = cv::boundingRect(cv::Mat(contours[i]));
         if (boundrect.width * boundrect.height < 400) continue;
-        if (boundrect.x > 5 &&
-            boundrect.x + boundrect.width + 5 < rgb_image_.cols) {
-            boundrect.x -= 5;
-            boundrect.width += 10;
-        }
-        if (boundrect.y > 10 &&
-            boundrect.y + boundrect.height + 10 < rgb_image_.rows) {
-            boundrect.y -= 10;
-            boundrect.height += 20;
-        }
-        cv::Mat object_img = rgb_image_(boundrect);
+        cv::Rect origin_rect = boundrect;
+        origin_rect.x *= 2;
+        origin_rect.y *= 2;
+        origin_rect.height *= 2;
+        origin_rect.width *= 2;
+        cv::Mat object_img = rgb_image_(origin_rect);
         tinker_vision_msgs::ObjectClassify classify_srv;
         cv_bridge::CvImage cvi(std_msgs::Header(), "bgr8", object_img);
         cvi.toImageMsg(classify_srv.request.img);
         if (classify_client_.call(classify_srv)) {
-            if (classify_srv.response.found) {
-                cv::rectangle(rgb_image_, cv::Point(boundrect.x, boundrect.y),
+            if (classify_srv.response.found &&
+                classify_srv.response.df_val < -0.2) {
+                cv::rectangle(rgb_image, cv::Point(boundrect.x, boundrect.y),
                               cv::Point(boundrect.x + boundrect.width,
                                         boundrect.y + boundrect.height),
                               cv::Scalar(0, 255, 0));
-                cv::putText(rgb_image_, classify_srv.response.name.data,
+                char label_text[200];
+                sprintf(label_text, "%s %1.3f", classify_srv.response.name.data.c_str(),
+                        classify_srv.response.df_val);
+                cv::putText(rgb_image, label_text,
                         cv::Point(boundrect.x, boundrect.y), 
                         cv::FONT_HERSHEY_DUPLEX, 0.5, cv::Scalar(0, 0, 0));
                 object_pointclouds.push_back(BuildPointCloud(
-                    depth_image_(boundrect), rgb_image_(boundrect)));
+                    depth_image_(boundrect), rgb_image(boundrect)));
+            } else {
+                cv::rectangle(rgb_image, cv::Point(boundrect.x, boundrect.y),
+                              cv::Point(boundrect.x + boundrect.width,
+                                        boundrect.y + boundrect.height),
+                              cv::Scalar(0, 0, 255));
             }
         }
     }
-    cv::imwrite("/home/iarc/result.png", rgb_image_);
+    cv::imwrite("/home/iarc/result.png", rgb_image);
     return object_pointclouds;
 }
 
