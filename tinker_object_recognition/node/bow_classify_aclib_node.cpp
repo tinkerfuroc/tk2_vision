@@ -237,6 +237,7 @@ private:
     ForegroundDetector detector_;
     string vocabulary_filename_;
     ros::Publisher pub_;
+    ros::Publisher dbg_pub_;
     ros::Subscriber sub_;
     vector<string> object_classes;
     CvSVM *svms;
@@ -262,7 +263,6 @@ private:
 
     ros::ServiceServer classify_service_;
 
-    ros::Publisher dbg_pub_;
 };
 
 int main(int argc, char *argv[]) {
