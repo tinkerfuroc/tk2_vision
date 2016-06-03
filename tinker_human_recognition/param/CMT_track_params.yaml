@@ -1,3 +1,6 @@
 CMT_track_params :
     emd_threshold : 3.0
+    min_depth : 0.0
+    max_depth : 100.0
+    
     
