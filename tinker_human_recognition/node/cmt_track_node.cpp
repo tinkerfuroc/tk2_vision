@@ -1,5 +1,7 @@
 #include "tinker_human_recognition/cmt_track/CMT.h"
 #include "tinker_object_recognition/utilities.h"
+#include "tinker_object_recognition/graph_filter/filters.h"
+#include "tinker_camera/pointcloud_builder.h"
 
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
@@ -20,6 +22,7 @@ using std::vector;
 class CMT_track_node
 {
 public:
+
     void ImageCallBack(const sensor_msgs::Image::ConstPtr &msg) {
         cv_bridge::CvImagePtr cv_ptr =
             cv_bridge::toCvCopy(msg, sensor_msgs::image_encodings::BGR8);
@@ -27,8 +30,10 @@ public:
         if (cam_mat.empty()) return;
         if (init_done_)
         {
+            cv::Mat cam_mat_masked;
+            cam_mat.copyTo(cam_mat_masked, depth_mask_);
             cv::Mat cam_mat_gray;
-            cv::cvtColor(cam_mat, cam_mat_gray, CV_BGR2GRAY);
+            cv::cvtColor(cam_mat_masked, cam_mat_gray, CV_BGR2GRAY);
             
             try
             {
@@ -45,19 +50,23 @@ public:
             
             //compare histogram using earth mover's distance
             cv::Rect rect = getRectFromCMT();
-            cv::Mat hist = getHist(cam_mat, rect);
+            cv::Mat hist = getHist(cam_mat_masked, rect);
             float emd = compare_histograms(hist, start_histogram_);
             ROS_INFO("emd: %f", emd);
-            is_same_ = (emd < (float)emd_threshold_);
+            is_same_ = (emd < emd_threshold_);
             
             //debug image display
             Draw(cam_mat);
             
-            // if dead
             if (!is_same_ )
             {
-            //    init_done_ = false;
                 ROS_WARN("lost sight of human.");
+            }
+            else
+            {
+                tinker::vision::PointCloudPtr pcp = tinker::vision::BuildPointCloud(k2_depth_mat_, cam_mat);
+                geometry_msgs::Point center = tinker::vision::GetCenter(pcp);
+                center_pub_.publish(center);
             }
         }
         else
@@ -93,6 +102,13 @@ public:
         }
     }
     
+    void K2DepthCallBack(const sensor_msgs::Image::ConstPtr &msg) {
+        cv_bridge::CvImagePtr cv_ptr =
+            cv_bridge::toCvCopy(msg);
+        k2_depth_mat_ = cv_ptr->image;    //16SC3, so no encoding param is passed
+        depth_mask_ = tinker::vision::DepthFilterMask(k2_depth_mat_, min_depth_, max_depth_);
+    }
+
     cv::Mat getHist(cv::Mat &source, cv::Rect &bound) 
     {
         int rectupY = max(bound.y, 0);
@@ -191,12 +207,22 @@ public:
         private_nh_.getParam("CMT_track_params", CMT_track_params);
         ROS_ASSERT(CMT_track_params.size() > 0);
         ROS_ASSERT(CMT_track_params.hasMember("emd_threshold"));
-        emd_threshold_ = (double)CMT_track_params["emd_threshold"];
+        double f = (double)CMT_track_params["emd_threshold"];
+        emd_threshold_ = (float) f;
+        ROS_ASSERT(CMT_track_params.hasMember("min_depth"));
+        f = (double)CMT_track_params["min_depth"];
+        min_depth_ = (float) f;
+        ROS_ASSERT(CMT_track_params.hasMember("max_depth"));
+        f = (double)CMT_track_params["max_depth"];
+        max_depth_ = (float) f;
         img_sub_ = nh_.subscribe("head/kinect2/rgb/image_color", 1,
             &CMT_track_node::ImageCallBack, this);
         k2_body_sub_ = nh_.subscribe("head/kinect2/bodyArray", 1,
             &CMT_track_node::K2BodyCallBack, this);
+        k2_depth_sub_ = nh_.subscribe("head/kinect2/depth/image_depth", 1,
+            &CMT_track_node::K2DepthCallBack, this);
         dbg_pub_ = nh_.advertise<sensor_msgs::Image>("tk2_vision/dbg_cmtimg", 1);
+        center_pub_ = nh_.advertise<geometry_msgs::Point>("tk2_vision/human_center", 1);
     }
     
     
@@ -209,13 +235,20 @@ protected:
     cv::Mat start_histogram_;
     bool init_done_;
     
-    double emd_threshold_;
+    cv::Mat k2_depth_mat_;
+    cv::Mat depth_mask_;
+    
+    float emd_threshold_;
+    float min_depth_;
+    float max_depth_;
     
     ros::NodeHandle nh_;
     ros::NodeHandle private_nh_;
     ros::Subscriber img_sub_;
     ros::Subscriber k2_body_sub_;
+    ros::Subscriber k2_depth_sub_;
     ros::Publisher dbg_pub_;
+    ros::Publisher center_pub_;
     
     int abs(int n) {return n>0?n:-n;}
     int min(int a, int b) {return a>b?b:a;}

@@ -49,6 +49,8 @@
   <build_depend>tinker_vision_msgs</build_depend>
   <build_depend>k2_client</build_depend>
   <build_depend>tinker_object_recognition</build_depend>
+  <build_depend>tinker_camera</build_depend>
+  <run_depend>tinker_camera</run_depend>
   <run_depend>tinker_object_recognition</run_depend>
   <run_depend>k2_client</run_depend>
   <run_depend>message_runtime</run_depend>

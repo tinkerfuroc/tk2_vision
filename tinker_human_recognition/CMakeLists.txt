@@ -15,6 +15,7 @@ find_package(catkin REQUIRED COMPONENTS
   tf
   tinker_vision_msgs
   tinker_object_recognition
+  tinker_camera
   k2_client
 )
 
