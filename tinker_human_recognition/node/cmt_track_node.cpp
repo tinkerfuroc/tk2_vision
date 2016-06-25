@@ -27,6 +27,7 @@ public:
         cv_bridge::CvImagePtr cv_ptr =
             cv_bridge::toCvCopy(msg, sensor_msgs::image_encodings::BGR8);
         cv::Mat cam_mat = cv_ptr->image;
+        cv::resize(cam_mat, cam_mat, cv::Size(),  1/resize_p_, 1/resize_p_);
         if (cam_mat.empty()) return;
         if (init_done_)
         {
@@ -34,7 +35,6 @@ public:
             cam_mat.copyTo(cam_mat_masked, depth_mask_);
             cv::Mat cam_mat_gray;
             cv::cvtColor(cam_mat_masked, cam_mat_gray, CV_BGR2GRAY);
-            
             try
             {
                 //Let CMT process the frame
@@ -47,7 +47,6 @@ public:
                 ROS_WARN("get strange error in cmt::processframe");
                 return;
             }
-            
             //compare histogram using earth mover's distance
             cv::Rect rect = getRectFromCMT();
             cv::Mat hist = getHist(cam_mat_masked, rect);
@@ -56,17 +55,19 @@ public:
             is_same_ = (emd < emd_threshold_);
             
             //debug image display
-            Draw(cam_mat);
-            
+            Draw(cam_mat); 
             if (!is_same_ )
             {
                 ROS_WARN("lost sight of human.");
             }
             else
             {
-                tinker::vision::PointCloudPtr pcp = tinker::vision::BuildPointCloud(k2_depth_mat_, cam_mat);
-                geometry_msgs::Point center = tinker::vision::GetCenter(pcp);
-                center_pub_.publish(center);
+                if(k2_depth_mat_.rows > 0 && k2_depth_mat_.cols > 0)
+                {
+                    tinker::vision::PointCloudPtr pcp = tinker::vision::BuildPointCloud(k2_depth_mat_, cam_mat_masked);
+                    geometry_msgs::Point center = tinker::vision::GetCenter(pcp);
+                    center_pub_.publish(center);
+                }
             }
         }
         else
@@ -85,8 +86,8 @@ public:
     {
         if (!init_done_ && !start_mat_.empty()) {
             k2_client::Body body = msg->bodies[0];
-            start_rect_ = cv::Rect(min(body.toX, body.fromX), min(body.toY, body.fromY),
-                abs(body.toX - body.fromX), abs(body.toY - body.fromY));
+            start_rect_ = cv::Rect(min(body.toX, body.fromX)/resize_p_, min(body.toY, body.fromY)/resize_p_,
+                abs(body.toX - body.fromX)/resize_p_, abs(body.toY - body.fromY)/resize_p_);
             Mat img_gray;
             if (start_mat_.channels() > 1) {
                 cv::cvtColor(start_mat_, img_gray, CV_BGR2GRAY);
@@ -105,8 +106,15 @@ public:
     void K2DepthCallBack(const sensor_msgs::Image::ConstPtr &msg) {
         cv_bridge::CvImagePtr cv_ptr =
             cv_bridge::toCvCopy(msg);
-        k2_depth_mat_ = cv_ptr->image;    //16SC3, so no encoding param is passed
-        depth_mask_ = tinker::vision::DepthFilterMask(k2_depth_mat_, min_depth_, max_depth_);
+        cv::Mat k2_depth_mat = cv_ptr->image;    //16SC3, so no encoding param is passed
+        cv::resize(k2_depth_mat, k2_depth_mat, cv::Size(), 1/resize_p_, 1/resize_p_);
+        depth_mask_ = tinker::vision::DepthFilterMask(k2_depth_mat, min_depth_, max_depth_);
+        tinker::vision::DilateImage(depth_mask_, 3);
+        tinker::vision::ErodeImage(depth_mask_, 6);
+        tinker::vision::DilateImage(depth_mask_, 8);
+
+
+        k2_depth_mat.copyTo(k2_depth_mat_, depth_mask_); 
     }
 
     cv::Mat getHist(cv::Mat &source, cv::Rect &bound) 
@@ -125,7 +133,7 @@ public:
         norm_mat = tinker::vision::HistogramEqualizeRGB(norm_mat);
         
 	    const int dims = 1;
-	    const int sizes[] = { 256, 256, 256};
+	    const int sizes[] = { 64, 64, 64};
 	    const int num_channels = 3;
 	    const int channels[] = { 0, 1, 2 };
 	    float rRange[] = { 0, 256 };
@@ -201,7 +209,7 @@ public:
     }
 
     CMT_track_node()
-        : private_nh_("~"), init_done_(false)
+        : private_nh_("~"), init_done_(false), resize_p_(4.0)
     {
         XmlRpc::XmlRpcValue CMT_track_params;
         private_nh_.getParam("CMT_track_params", CMT_track_params);
@@ -241,6 +249,8 @@ protected:
     float emd_threshold_;
     float min_depth_;
     float max_depth_;
+
+    float resize_p_;
     
     ros::NodeHandle nh_;
     ros::NodeHandle private_nh_;
