@@ -17,6 +17,7 @@ find_package(catkin REQUIRED COMPONENTS
   tinker_object_recognition
   tinker_camera
   k2_client
+  std_msgs
 )
 
 ## System dependencies are found with CMake's conventions
@@ -111,7 +112,7 @@ find_package(catkin REQUIRED COMPONENTS
 catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES tinker_human_recognition
-   CATKIN_DEPENDS roscpp rospy tf message_runtime tinker_vision_msgs k2_client
+   CATKIN_DEPENDS roscpp rospy tf message_runtime tinker_vision_msgs k2_client std_msgs
 #  DEPENDS system_lib
 )
 

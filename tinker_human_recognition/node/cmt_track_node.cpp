@@ -16,105 +16,131 @@
 #include <k2_client/BodyArray.h>
 #include <sensor_msgs/Image.h>
 #include <cv_bridge/cv_bridge.h>
-
+#include <std_srvs/Empty.h>
 using std::vector;
 
 class CMT_track_node
 {
 public:
 
+    bool isCenterValid(cv::Mat cam_mat_masked, geometry_msgs::Point &center) {
+        center = getZeroPoint();
+        if (cam_mat_masked.empty() || k2_depth_mat_.empty()) 
+            return false;
+        tinker::vision::PointCloudPtr pcp = 
+            tinker::vision::BuildPointCloud(k2_depth_mat_, cam_mat_masked);
+        center = tinker::vision::GetCenter(pcp);
+        return (pcp->width > pointcloud_width_tolerance_);
+    }
+
     void ImageCallBack(const sensor_msgs::Image::ConstPtr &msg) {
-        cv_bridge::CvImagePtr cv_ptr =
-            cv_bridge::toCvCopy(msg, sensor_msgs::image_encodings::BGR8);
-        cv::Mat cam_mat = cv_ptr->image;
-        cv::resize(cam_mat, cam_mat, cv::Size(),  1/resize_p_, 1/resize_p_);
-        if (cam_mat.empty()) return;
-        if (init_done_)
+        if(enable_)
         {
+            cv_bridge::CvImagePtr cv_ptr =
+                cv_bridge::toCvCopy(msg, sensor_msgs::image_encodings::BGR8);
+            cv::Mat cam_mat = cv_ptr->image;
+            cv::resize(cam_mat, cam_mat, cv::Size(),  1/resize_p_, 1/resize_p_);
+            if (cam_mat.empty() || depth_mask_.empty()) 
+                return;
             cv::Mat cam_mat_masked;
             cam_mat.copyTo(cam_mat_masked, depth_mask_);
-            cv::Mat cam_mat_gray;
-            cv::cvtColor(cam_mat_masked, cam_mat_gray, CV_BGR2GRAY);
-            try
+            if (init_done_)
             {
-                //Let CMT process the frame
-                cmt_.processFrame(cam_mat_gray);
-            }
-            catch (...)
-            {
-                // mdzz why can I get a nan error in fastclauster
-                // dirty fuck
-                ROS_WARN("get strange error in cmt::processframe");
-                return;
-            }
-            //compare histogram using earth mover's distance
-            cv::Rect rect = getRectFromCMT();
-            cv::Mat hist = getHist(cam_mat_masked, rect);
-            float emd = compare_histograms(hist, start_histogram_);
-            ROS_INFO("emd: %f", emd);
-            is_same_ = (emd < emd_threshold_);
-            
-            //debug image display
-            Draw(cam_mat); 
-            if (!is_same_ )
-            {
-                ROS_WARN("lost sight of human.");
+                cv::Mat cam_mat_gray;
+                cv::cvtColor(cam_mat_masked, cam_mat_gray, CV_BGR2GRAY);
+                try
+                {
+                    //Let CMT process the frame
+                    cmt_.processFrame(cam_mat_gray);
+                }
+                catch (...)
+                {
+                    // mdzz why can I get a nan error in fastclauster
+                    // dirty fuck
+                    ROS_WARN("get strange error in cmt::processframe");
+                    return;
+                }
+                //compare histogram using earth mover's distance
+                cv::Rect rect = getRectFromCMT();
+                cv::Mat hist = getHist(cam_mat_masked, rect);
+                float emd = compare_histograms(hist, start_histogram_);
+                ROS_INFO("emd: %f", emd);
+                is_same_ = (emd < emd_threshold_);
+                
+                //debug image display
+                Draw(cam_mat); 
+                bool find = false;
+                geometry_msgs::Point center = getZeroPoint();
+                find = is_same_ && (isCenterValid(cam_mat_masked, center));
+                center_pub_.publish(center);
+                if(find)
+                {
+                    lost_sight_cnt_ = 0;    
+                }
+                else
+                {
+                    lost_sight_cnt_++;
+                    if(lost_sight_cnt_ >= lost_sight_tolerance_)
+                    {
+                        ROS_WARN("lost sight of human.");
+                    }
+                }
             }
             else
             {
-                if(k2_depth_mat_.rows > 0 && k2_depth_mat_.cols > 0)
-                {
-                    tinker::vision::PointCloudPtr pcp = tinker::vision::BuildPointCloud(k2_depth_mat_, cam_mat_masked);
-                    geometry_msgs::Point center = tinker::vision::GetCenter(pcp);
-                    center_pub_.publish(center);
-                }
+                start_mat_masked_ = cam_mat_masked;
+                start_mat_ = cam_mat;
+                ROS_WARN("no body detected.");
             }
+            sensor_msgs::Image img;
+            cv_bridge::CvImage cvi(std_msgs::Header(), "bgr8", cam_mat);
+            cvi.toImageMsg(img);
+            dbg_pub_.publish(img);
         }
-        else
-        {
-            start_mat_ = cam_mat;
-            ROS_WARN("no body detected.");
-        }
-        sensor_msgs::Image img;
-        cv_bridge::CvImage cvi(std_msgs::Header(), "bgr8", cam_mat);
-        cvi.toImageMsg(img);
-        dbg_pub_.publish(img);
     }
     
 
     void K2BodyCallBack(const k2_client::BodyArray::ConstPtr &msg) 
     {
-        if (!init_done_ && !start_mat_.empty()) {
+        if (enable_ && !init_done_ && !start_mat_.empty() && !k2_depth_mat_.empty()) {
             k2_client::Body body = msg->bodies[0];
             start_rect_ = cv::Rect(min(body.toX, body.fromX)/resize_p_, min(body.toY, body.fromY)/resize_p_,
                 abs(body.toX - body.fromX)/resize_p_, abs(body.toY - body.fromY)/resize_p_);
-            Mat img_gray;
-            if (start_mat_.channels() > 1) {
-                cv::cvtColor(start_mat_, img_gray, CV_BGR2GRAY);
-            } else {
-                img_gray = start_mat_;
-            }
-            cmt_ = cmt::CMT();
-            cmt_.initialize(img_gray, start_rect_);
-            init_done_ = true;
+            start_mat_masked_ = cv::Mat(start_mat_masked_, start_rect_);
+            k2_depth_mat_= cv::Mat(k2_depth_mat_, start_rect_);
+            geometry_msgs::Point center;
+            if(isCenterValid(start_mat_masked_, center))
+            {
+                Mat img_gray;
+                if (start_mat_.channels() > 1) {
+                    cv::cvtColor(start_mat_, img_gray, CV_BGR2GRAY);
+                } else {
+                    img_gray = start_mat_;
+                }
+                cmt_ = cmt::CMT();
+                cmt_.initialize(img_gray, start_rect_);
+                init_done_ = true;
             
-            start_histogram_ = getHist(start_mat_, start_rect_);
-            ROS_INFO("kinect body detected. cmt start.");
+                start_histogram_ = getHist(start_mat_, start_rect_);
+                ROS_INFO("kinect body detected. cmt start.");
+            }
         }
     }
     
     void K2DepthCallBack(const sensor_msgs::Image::ConstPtr &msg) {
-        cv_bridge::CvImagePtr cv_ptr =
-            cv_bridge::toCvCopy(msg);
-        cv::Mat k2_depth_mat = cv_ptr->image;    //16SC3, so no encoding param is passed
-        cv::resize(k2_depth_mat, k2_depth_mat, cv::Size(), 1/resize_p_, 1/resize_p_);
-        depth_mask_ = tinker::vision::DepthFilterMask(k2_depth_mat, min_depth_, max_depth_);
-        tinker::vision::DilateImage(depth_mask_, 3);
-        tinker::vision::ErodeImage(depth_mask_, 6);
-        tinker::vision::DilateImage(depth_mask_, 8);
+        if(enable_)
+        {
+            cv_bridge::CvImagePtr cv_ptr =
+                cv_bridge::toCvCopy(msg);
+            cv::Mat k2_depth_mat = cv_ptr->image;    //16SC3, so no encoding param is passed
+            cv::resize(k2_depth_mat, k2_depth_mat, cv::Size(), 1/resize_p_, 1/resize_p_);
+            depth_mask_ = tinker::vision::DepthFilterMask(k2_depth_mat, min_depth_, max_depth_);
+            tinker::vision::DilateImage(depth_mask_, 3);
+            tinker::vision::ErodeImage(depth_mask_, 6);
+            tinker::vision::DilateImage(depth_mask_, 8);
 
-
-        k2_depth_mat.copyTo(k2_depth_mat_, depth_mask_); 
+            k2_depth_mat.copyTo(k2_depth_mat_, depth_mask_); 
+        }
     }
 
     cv::Mat getHist(cv::Mat &source, cv::Rect &bound) 
@@ -209,7 +235,8 @@ public:
     }
 
     CMT_track_node()
-        : private_nh_("~"), init_done_(false), resize_p_(4.0)
+        : private_nh_("~"), init_done_(false), resize_p_(4.0), pointcloud_width_tolerance_(500),
+        lost_sight_cnt_(0), enable_(false)
     {
         XmlRpc::XmlRpcValue CMT_track_params;
         private_nh_.getParam("CMT_track_params", CMT_track_params);
@@ -223,6 +250,9 @@ public:
         ROS_ASSERT(CMT_track_params.hasMember("max_depth"));
         f = (double)CMT_track_params["max_depth"];
         max_depth_ = (float) f;
+        ROS_ASSERT(CMT_track_params.hasMember("lost_sight_tolerance"));
+        lost_sight_tolerance_ = (int)CMT_track_params["lost_sight_tolerance"];
+        
         img_sub_ = nh_.subscribe("head/kinect2/rgb/image_color", 1,
             &CMT_track_node::ImageCallBack, this);
         k2_body_sub_ = nh_.subscribe("head/kinect2/bodyArray", 1,
@@ -231,26 +261,47 @@ public:
             &CMT_track_node::K2DepthCallBack, this);
         dbg_pub_ = nh_.advertise<sensor_msgs::Image>("tk2_vision/dbg_cmtimg", 1);
         center_pub_ = nh_.advertise<geometry_msgs::Point>("tk2_vision/human_center", 1);
+        hum_recog_enable_srv_ = nh_.advertiseService("tk2_vision/hum_recog_enable", 
+            &CMT_track_node::humRecogEnable, this);
+        hum_recog_disable_srv_ = nh_.advertiseService("tk2_vision/hum_recog_disable", 
+            &CMT_track_node::humRecogDisable, this);
     }
     
+    bool humRecogEnable(std_srvs::Empty::Request &req, std_srvs::Empty::Response &res)
+    {
+      enable_ = true;
+      return true;
+    }
+    
+    bool humRecogDisable(std_srvs::Empty::Request &req, std_srvs::Empty::Response &res)
+    {
+      enable_ = false;
+      return true;
+    }
     
 protected:
     bool is_same_;
+    bool enable_;
 
     cmt::CMT cmt_;
     cv::Rect start_rect_;
     cv::Mat start_mat_;
+    cv::Mat start_mat_masked_;
     cv::Mat start_histogram_;
     bool init_done_;
     
     cv::Mat k2_depth_mat_;
     cv::Mat depth_mask_;
     
+    //params
     float emd_threshold_;
     float min_depth_;
     float max_depth_;
-
-    float resize_p_;
+    int lost_sight_tolerance_;
+    int lost_sight_cnt_;
+    //const params
+    const float resize_p_;
+    const float pointcloud_width_tolerance_;
     
     ros::NodeHandle nh_;
     ros::NodeHandle private_nh_;
@@ -259,10 +310,15 @@ protected:
     ros::Subscriber k2_depth_sub_;
     ros::Publisher dbg_pub_;
     ros::Publisher center_pub_;
+    ros::ServiceServer hum_recog_enable_srv_;
+    ros::ServiceServer hum_recog_disable_srv_;
+    
     
     int abs(int n) {return n>0?n:-n;}
     int min(int a, int b) {return a>b?b:a;}
     int max(int a, int b) {return a<b?b:a;}
+    geometry_msgs::Point getZeroPoint() {geometry_msgs::Point p; p.x=0; p.y=0; p.z=0; return p;}
+    
 };
 
 int main(int argc, char **argv)
