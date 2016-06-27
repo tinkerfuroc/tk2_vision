@@ -1,3 +1,5 @@
+#!/usr/bin/python
+
 from oxfordface import find_faces, detect_same_face_in_img, is_same_person
 import cv2
 import rospy
@@ -28,40 +30,45 @@ def is_male(face_result):
 class TinkerHumanIdentify:
     def __init__(self):
         self._operator_id = None
-        self._rgb_img_sub = rospy.Subscriber("rgb_img", Image, self.rgb_callback) 
-        self._loc_img_sub = rospy.Subscriber("loc_img", Image, self.depth_callback) 
+        rgb_topic = rospy.get_param('~rgb_topic', '/head/kinect2/rgb/image_color')
+        loc_topic = rospy.get_param('~loc_topic', '/head/kinect2/depth/image_depth')
+        self._rgb_img_sub = rospy.Subscriber(rgb_topic, Image, self.rgb_callback) 
+        self._loc_img_sub = rospy.Subscriber(loc_topic, Image, self.depth_callback) 
         self._l = Lock()
+        self.bridge = CvBridge()
         self._rgb_img = None
         self._loc_img = None
         self._train_service = rospy.Service('train_operator', Empty, self.train_operator_callback)
-        self._train_service = rospy.Service('find_operator', FindOperator, self.find_operator_callback)
+        self._find_service = rospy.Service('find_operator', FindOperator, self.find_operator_callback)
         self._seq = 0
     
     def rgb_callback(self, data):
         with self._l:
             try:
-                self._rgb_img = self.bridge.imgmsg_to_cv2(data, encoding="bgr8")
+                self._rgb_img = self.bridge.imgmsg_to_cv2(data, desired_encoding="bgr8")
             except CvBridgeError as e:
                 print(e)
 
     def depth_callback(self, data):
         with self._l:
             try:
-                self._loc_img = self.bridge.imgmsg_to_cv2(data, encoding="passthrough")
+                self._loc_img = self.bridge.imgmsg_to_cv2(data, desired_encoding="passthrough")
             except CvBridgeError as e:
                 print(e)
 
     def train_operator_callback(self, req):
+        print 'traing operator'
         with self._l:
-            if not self._rgb_img:
+            if self._rgb_img is None:
                 return None
             if self.memorize_operator(self._rgb_img):
                 return EmptyResponse()
             return None
 
     def find_operator_callback(self, req):
+        print 'finding operator'
         with self._l:
-            if not self._rgb_img or not self._loc_img:
+            if self._rgb_img is None or self._loc_img is None:
                 return None
             operator_face = self.reidentify_operator(self._rgb_img)
             if not operator_face:
@@ -84,13 +91,14 @@ class TinkerHumanIdentify:
         face_results = find_faces(img)
         if not face_results:
             return False
-        face_sizes = [(i, face_size(r)) for i, r in face_results.iteritems]
+        face_sizes = [(i, face_size(r)) for i, r in face_results.iteritems()]
         biggest_face_id = max(face_sizes, key=lambda x: x[1])
-        self._operator_id = biggest_face_id
+        self._operator_id = biggest_face_id[0]
+        rospy.loginfo('operator id: ' + self._operator_id)
         return True
 
     def reidentify_operator(self, img):
-        found_id, face_results = detect_same_face_in_img(img)
+        found_face_ids, face_results = detect_same_face_in_img(img, self._operator_id)
         self.generate_report_img(img, face_results)
         if not found_face_ids or len(found_face_ids) > 1:
             return None
@@ -98,10 +106,10 @@ class TinkerHumanIdentify:
         from_x, from_y, width, height = get_bounding_box(operator_face)
         font = cv2.FONT_HERSHEY_SIMPLEX
         cv2.putText(img, 'operator', (from_x, from_y), font, 
-                4, (255,255,255), 0.5, cv2.LINE_AA)
+                4, (255,255,255), 1, cv2.CV_AA)
         return operator_face
 
-    def generate_report_img(self, img, found_faces)
+    def generate_report_img(self, img, found_faces):
         for face_result in found_faces.values():
             from_x, from_y, width, height = get_bounding_box(face_result)
             to_x = from_x + width
@@ -111,4 +119,10 @@ class TinkerHumanIdentify:
             else:
                 cv2.rectangle(img, (from_x, from_y), (to_x, to_y), (0, 0, 255), 3)
 
-        
+def main():
+    rospy.init_node('tinker_human_identify')
+    identifier = TinkerHumanIdentify()
+    rospy.spin()
+
+if __name__ == '__main__':
+    main()

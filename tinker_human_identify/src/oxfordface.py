@@ -13,7 +13,7 @@ def find_faces(img):
             'analyzesGender' : True 
             }
     detect_results = face_client.detect(face_options)
-    return {r['faceId'] : r for r in detect_results]}
+    return {r['faceId'] : r for r in detect_results}
 
 def detect_same_face_in_img(img, detect_face_id):
     face_client = Client.Face(FACE_KEY)
@@ -23,6 +23,6 @@ def detect_same_face_in_img(img, detect_face_id):
     return [r['faceId'] for r in simlar_results 
             if is_same_person(r['faceId'], detect_face_id)], found_faces
 
-def is_same_person(img, face_id1, face_id2):
+def is_same_person(face_id1, face_id2):
     face_client = Client.Face(FACE_KEY)
     return face_client.verify(face_id1, face_id2)['isIdentical']
