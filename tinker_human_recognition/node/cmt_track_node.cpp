@@ -6,6 +6,8 @@
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 
+#include <tinker_vision_msgs/EmptyAction.h>
+
 #include <iostream>
 #include <fstream>
 #include <sstream>
@@ -17,6 +19,7 @@
 #include <sensor_msgs/Image.h>
 #include <cv_bridge/cv_bridge.h>
 #include <std_srvs/Empty.h>
+#include <actionlib/server/simple_action_server.h>
 using std::vector;
 
 class CMT_track_node
@@ -114,8 +117,6 @@ public:
             toY = min(toY, start_mat_.rows);
             start_rect_ = cv::Rect(fromX, fromY, toX-fromX, toY-fromY);
             
-            ROS_INFO("rect %d %d %d %d", start_rect_.x, start_rect_.y, start_rect_.width, start_rect_.height);
-            ROS_INFO("mat %d %d %d %d", start_mat_masked_.rows, start_mat_masked_.cols, k2_depth_mat_.rows, k2_depth_mat_.cols);
             cv::Mat start_mat_masked(start_mat_masked_, start_rect_);
             cv::Mat k2_depth_mat(k2_depth_mat_, start_rect_);
             start_mat_masked.copyTo(start_mat_masked_);
@@ -136,6 +137,8 @@ public:
                 start_histogram_ = getHist(start_mat_, start_rect_);
                 ROS_INFO("kinect body detected. cmt start.");
             }
+
+            enable_as_.setSucceeded();
         }
     }
     
@@ -248,7 +251,9 @@ public:
 
     CMT_track_node()
         : private_nh_("~"), init_done_(false), resize_p_(4.0), pointcloud_width_tolerance_(500),
-        lost_sight_cnt_(0), enable_(false)
+        lost_sight_cnt_(0), enable_(false),
+        enable_as_(nh_, "tk2_vision/hum_recog_enable", false),
+        disable_as_(nh_, "tk2_vision/hum_recog_disable", false)
     {
         XmlRpc::XmlRpcValue CMT_track_params;
         private_nh_.getParam("CMT_track_params", CMT_track_params);
@@ -273,24 +278,41 @@ public:
             &CMT_track_node::K2DepthCallBack, this);
         dbg_pub_ = nh_.advertise<sensor_msgs::Image>("tk2_vision/dbg_cmtimg", 1);
         center_pub_ = nh_.advertise<geometry_msgs::Point>("tk2_vision/human_center", 1);
-        hum_recog_enable_srv_ = nh_.advertiseService("tk2_vision/hum_recog_enable", 
-            &CMT_track_node::humRecogEnable, this);
-        hum_recog_disable_srv_ = nh_.advertiseService("tk2_vision/hum_recog_disable", 
-            &CMT_track_node::humRecogDisable, this);
+        //hum_recog_enable_srv_ = nh_.advertiseService("tk2_vision/hum_recog_enable", 
+        //    &CMT_track_node::humRecogEnable, this);
+        //hum_recog_disable_srv_ = nh_.advertiseService("tk2_vision/hum_recog_disable", 
+        //    &CMT_track_node::humRecogDisable, this);
+        enable_as_.registerGoalCallback(boost::bind(&CMT_track_node::humRecogEnable, this));
+        disable_as_.registerGoalCallback(boost::bind(&CMT_track_node::humRecogDisable, this));
+        try
+        {
+            enable_as_.start();
+            disable_as_.start();
+        }
+        catch(...)
+        {
+            ROS_ERROR("aclib start failed TAT");
+        }
     }
     
-    bool humRecogEnable(std_srvs::Empty::Request &req, std_srvs::Empty::Response &res)
+    //bool humRecogEnable(std_srvs::Empty::Request &req, std_srvs::Empty::Response &res)
+    void humRecogEnable()
     {
       enable_ = true;
       ROS_INFO("follome enabled");
-      return true;
+      tinker_vision_msgs::EmptyGoalConstPtr goal = enable_as_.acceptNewGoal();
+      //return true;
     }
     
-    bool humRecogDisable(std_srvs::Empty::Request &req, std_srvs::Empty::Response &res)
+    //bool humRecogDisable(std_srvs::Empty::Request &req, std_srvs::Empty::Response &res)
+    void humRecogDisable()
     {
       enable_ = false;
+      init_done_ = false;
       ROS_INFO("followme disabled");
-      return true;
+      tinker_vision_msgs::EmptyGoalConstPtr goal = disable_as_.acceptNewGoal();
+      disable_as_.setSucceeded();
+      //return true;
     }
     
 protected:
@@ -324,9 +346,11 @@ protected:
     ros::Subscriber k2_depth_sub_;
     ros::Publisher dbg_pub_;
     ros::Publisher center_pub_;
-    ros::ServiceServer hum_recog_enable_srv_;
-    ros::ServiceServer hum_recog_disable_srv_;
-    
+    //ros::ServiceServer hum_recog_enable_srv_;
+    //ros::ServiceServer hum_recog_disable_srv_;
+        
+    actionlib::SimpleActionServer<tinker_vision_msgs::EmptyAction> enable_as_;
+    actionlib::SimpleActionServer<tinker_vision_msgs::EmptyAction> disable_as_;
     
     int abs(int n) {return n>0?n:-n;}
     int min(int a, int b) {return a>b?b:a;}
