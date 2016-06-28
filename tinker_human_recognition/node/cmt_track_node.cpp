@@ -104,12 +104,25 @@ public:
     {
         if (enable_ && !init_done_ && !start_mat_.empty() && !k2_depth_mat_.empty()) {
             k2_client::Body body = msg->bodies[0];
-            start_rect_ = cv::Rect(min(body.toX, body.fromX)/resize_p_, min(body.toY, body.fromY)/resize_p_,
-                abs(body.toX - body.fromX)/resize_p_, abs(body.toY - body.fromY)/resize_p_);
-            start_mat_masked_ = cv::Mat(start_mat_masked_, start_rect_);
-            k2_depth_mat_= cv::Mat(k2_depth_mat_, start_rect_);
+            int fromX = min(body.fromX, body.toX) / resize_p_;
+            int toX = max(body.fromX, body.toX) / resize_p_ ;
+            int fromY = min(body.fromY, body.toY) / resize_p_;
+            int toY = max(body.fromY, body.toY) / resize_p_;
+            fromX = max(fromX, 0);
+            toX = min(toX, start_mat_.cols);
+            fromY = max(fromY, 0);
+            toY = min(toY, start_mat_.rows);
+            start_rect_ = cv::Rect(fromX, fromY, toX-fromX, toY-fromY);
+            
+            ROS_INFO("rect %d %d %d %d", start_rect_.x, start_rect_.y, start_rect_.width, start_rect_.height);
+            ROS_INFO("mat %d %d %d %d", start_mat_masked_.rows, start_mat_masked_.cols, k2_depth_mat_.rows, k2_depth_mat_.cols);
+            cv::Mat start_mat_masked(start_mat_masked_, start_rect_);
+            cv::Mat k2_depth_mat(k2_depth_mat_, start_rect_);
+            start_mat_masked.copyTo(start_mat_masked_);
+            k2_depth_mat.copyTo(k2_depth_mat_);
+
             geometry_msgs::Point center;
-            if(isCenterValid(start_mat_masked_, center))
+            if(isCenterValid(start_mat_masked, center))
             {
                 Mat img_gray;
                 if (start_mat_.channels() > 1) {
@@ -120,7 +133,6 @@ public:
                 cmt_ = cmt::CMT();
                 cmt_.initialize(img_gray, start_rect_);
                 init_done_ = true;
-            
                 start_histogram_ = getHist(start_mat_, start_rect_);
                 ROS_INFO("kinect body detected. cmt start.");
             }
@@ -270,12 +282,14 @@ public:
     bool humRecogEnable(std_srvs::Empty::Request &req, std_srvs::Empty::Response &res)
     {
       enable_ = true;
+      ROS_INFO("follome enabled");
       return true;
     }
     
     bool humRecogDisable(std_srvs::Empty::Request &req, std_srvs::Empty::Response &res)
     {
       enable_ = false;
+      ROS_INFO("followme disabled");
       return true;
     }
     
