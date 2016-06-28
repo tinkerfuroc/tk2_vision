@@ -6,7 +6,7 @@ import rospy
 from sensor_msgs.msg import Image
 from cv_bridge import CvBridge, CvBridgeError
 from threading import Lock
-from std_srvs.srv import Empty, EmptyResponse
+from std_srvs.srv import Trigger, TriggerResponse
 from geometry_msgs.msg import PointStamped
 from tinker_vision_msgs.srv import FindOperator, FindOperatorResponse
 import numpy as np
@@ -38,7 +38,7 @@ class TinkerHumanIdentify:
         self.bridge = CvBridge()
         self._rgb_img = None
         self._loc_img = None
-        self._train_service = rospy.Service('train_operator', Empty, self.train_operator_callback)
+        self._train_service = rospy.Service('train_operator', Trigger, self.train_operator_callback)
         self._find_service = rospy.Service('find_operator', FindOperator, self.find_operator_callback)
         self._seq = 0
     
@@ -58,12 +58,16 @@ class TinkerHumanIdentify:
 
     def train_operator_callback(self, req):
         print 'traing operator'
+        result = TriggerResponse()
+        result.success = False
         with self._l:
             if self._rgb_img is None:
-                return None
+                return result
             if self.memorize_operator(self._rgb_img):
-                return EmptyResponse()
-            return None
+                result.success = True
+                return result
+            result.success = False
+            return result
 
     def find_operator_callback(self, req):
         print 'finding operator'
@@ -104,9 +108,13 @@ class TinkerHumanIdentify:
             return None
         operator_face = face_results[found_face_ids[0]]
         from_x, from_y, width, height = get_bounding_box(operator_face)
-        font = cv2.FONT_HERSHEY_SIMPLEX
-        cv2.putText(img, 'operator', (from_x, from_y), font, 
-                4, (255,255,255), 1, cv2.CV_AA)
+        from_x += 3
+        from_y += 3
+        width -= 6
+        height -= 6
+        to_x = from_x + width
+        to_y = from_y + height
+        cv2.rectangle(img, (from_x, from_y), (to_x, to_y), (0, 255, 0), 3)
         return operator_face
 
     def generate_report_img(self, img, found_faces):
