@@ -27,12 +27,14 @@ class CMT_track_node
 public:
 
     bool isCenterValid(cv::Mat cam_mat_masked, geometry_msgs::Point &center) {
+        printf("ofuck");
         center = getZeroPoint();
         if (cam_mat_masked.empty() || k2_depth_mat_.empty()) 
             return false;
         tinker::vision::PointCloudPtr pcp = 
             tinker::vision::BuildPointCloud(k2_depth_mat_, cam_mat_masked);
         center = tinker::vision::GetCenter(pcp);
+        ROS_INFO("find at %lf %lf %lf, %d", center.x, center.y, center.z, pcp->width);
         return (pcp->width > pointcloud_width_tolerance_);
     }
 
@@ -93,7 +95,7 @@ public:
             {
                 start_mat_masked_ = cam_mat_masked;
                 start_mat_ = cam_mat;
-                ROS_WARN("no body detected.");
+                //ROS_WARN("no body detected.");
             }
             sensor_msgs::Image img;
             cv_bridge::CvImage cvi(std_msgs::Header(), "bgr8", cam_mat);
@@ -116,14 +118,14 @@ public:
             fromY = max(fromY, 0);
             toY = min(toY, start_mat_.rows);
             start_rect_ = cv::Rect(fromX, fromY, toX-fromX, toY-fromY);
-            
+            //ROS_INFO("fuck1 %d %d %d %d", start_rect_.x, start_rect_.y, start_rect_.height, start_rect_.width);
+            //ROS_INFO("fuck11 %d %d %d %d",  start_mat_masked_.rows, start_mat_masked_.cols, k2_depth_mat_.rows, k2_depth_mat_.cols);
             cv::Mat start_mat_masked(start_mat_masked_, start_rect_);
             cv::Mat k2_depth_mat(k2_depth_mat_, start_rect_);
             start_mat_masked.copyTo(start_mat_masked_);
             k2_depth_mat.copyTo(k2_depth_mat_);
-
             geometry_msgs::Point center;
-            if(isCenterValid(start_mat_masked, center))
+            if(isCenterValid(start_mat_masked_, center))
             {
                 Mat img_gray;
                 if (start_mat_.channels() > 1) {
@@ -136,9 +138,8 @@ public:
                 init_done_ = true;
                 start_histogram_ = getHist(start_mat_, start_rect_);
                 ROS_INFO("kinect body detected. cmt start.");
+                enable_as_.setSucceeded();
             }
-
-            enable_as_.setSucceeded();
         }
     }
     
@@ -166,11 +167,9 @@ public:
         int rectrightX = min(source.cols, bound.x+bound.width);
         //ROS_INFO("fuck %d %d %d %d", rectleftX, rectupY, rectrightX - rectleftX, rectdownY - rectupY);
         cv::Rect rect(rectleftX, rectupY, rectrightX - rectleftX, rectdownY - rectupY);
-        
         cv::Mat roi(source, rect);
         cv::Mat norm_mat;
         cv::resize(roi, norm_mat, cv::Size(100, 100));
-        
         norm_mat = tinker::vision::HistogramEqualizeRGB(norm_mat);
         
 	    const int dims = 1;
@@ -250,7 +249,7 @@ public:
     }
 
     CMT_track_node()
-        : private_nh_("~"), init_done_(false), resize_p_(4.0), pointcloud_width_tolerance_(500),
+        : private_nh_("~"), init_done_(false), resize_p_(8.0), pointcloud_width_tolerance_(500),
         lost_sight_cnt_(0), enable_(false),
         enable_as_(nh_, "tk2_vision/hum_recog_enable", false),
         disable_as_(nh_, "tk2_vision/hum_recog_disable", false)
@@ -309,6 +308,9 @@ public:
     {
       enable_ = false;
       init_done_ = false;
+      lost_sight_cnt_ = 0;
+      start_mat_ = cv::Mat();
+      start_mat_masked_ = cv::Mat();
       ROS_INFO("followme disabled");
       tinker_vision_msgs::EmptyGoalConstPtr goal = disable_as_.acceptNewGoal();
       disable_as_.setSucceeded();
