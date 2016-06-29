@@ -77,17 +77,18 @@ public:
                 bool find = false;
                 geometry_msgs::Point center = getZeroPoint();
                 find = is_same_ && (isCenterValid(cam_mat_masked, center));
-                center_pub_.publish(center);
                 if(find)
                 {
-                    lost_sight_cnt_ = 0;    
+                    lost_sight_cnt_ = 0;
+                    center_pub_.publish(center);
                 }
                 else
                 {
                     lost_sight_cnt_++;
-                    if(lost_sight_cnt_ >= lost_sight_tolerance_)
+                    if(lost_sight_cnt_ == lost_sight_tolerance_)
                     {
                         ROS_WARN("lost sight of human.");
+                        center_pub_.publish(center);
                     }
                 }
             }
@@ -118,8 +119,6 @@ public:
             fromY = max(fromY, 0);
             toY = min(toY, start_mat_.rows);
             start_rect_ = cv::Rect(fromX, fromY, toX-fromX, toY-fromY);
-            //ROS_INFO("fuck1 %d %d %d %d", start_rect_.x, start_rect_.y, start_rect_.height, start_rect_.width);
-            //ROS_INFO("fuck11 %d %d %d %d",  start_mat_masked_.rows, start_mat_masked_.cols, k2_depth_mat_.rows, k2_depth_mat_.cols);
             cv::Mat start_mat_masked(start_mat_masked_, start_rect_);
             cv::Mat k2_depth_mat(k2_depth_mat_, start_rect_);
             start_mat_masked.copyTo(start_mat_masked_);
