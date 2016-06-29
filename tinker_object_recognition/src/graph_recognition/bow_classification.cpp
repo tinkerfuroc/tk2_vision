@@ -20,9 +20,9 @@ BoWRecognition::BoWRecognition(XmlRpc::XmlRpcValue& image_class_info)
     ROS_ASSERT(image_class_info.hasMember("image_folder_name"));
     image_folder_name = (string)image_class_info["image_folder_name"];
     feature_detector_ = cv::Ptr<cv::FeatureDetector>(
-            new cv::SiftFeatureDetector(0, 3, 0.08, 8));
+            new cv::SiftFeatureDetector(0, 3, 0.03, 4));
     desc_extractor_ = cv::Ptr<cv::DescriptorExtractor>(
-            new cv::SiftFeatureDetector(0, 3, 0.08, 8));
+            new cv::SiftFeatureDetector(0, 3, 0.03, 4));
     desc_matcher_ = cv::DescriptorMatcher::create(matcher_type_);
     ROS_ASSERT(!feature_detector_.empty());
     ROS_ASSERT(!desc_extractor_.empty());

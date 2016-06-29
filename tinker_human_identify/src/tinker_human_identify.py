@@ -10,7 +10,12 @@ from std_srvs.srv import Trigger, TriggerResponse
 from geometry_msgs.msg import PointStamped
 from tinker_vision_msgs.srv import FindOperator, FindOperatorResponse
 import numpy as np
+import subprocess
 
+
+def speak(s):
+    subprocess.Popen(('espeak', "'{}'".format(s)))
+    rospy.sleep(5)
 
 def get_bounding_box(face_result):
     from_x = face_result['faceRectangle']['left']
@@ -98,12 +103,18 @@ class TinkerHumanIdentify:
         face_sizes = [(i, face_size(r)) for i, r in face_results.iteritems()]
         biggest_face_id = max(face_sizes, key=lambda x: x[1])
         self._operator_id = biggest_face_id[0]
+        operator_result = face_results[self._operator_id]
+        if is_male(operator_result):
+            speak('My operator is male')
+        else:
+            speak('My operator is female')
         rospy.loginfo('operator id: ' + self._operator_id)
         return True
 
     def reidentify_operator(self, img):
         found_face_ids, face_results = detect_same_face_in_img(img, self._operator_id)
         self.generate_report_img(img, face_results)
+        self.speak_results(face_results)
         if not found_face_ids or len(found_face_ids) > 1:
             return None
         operator_face = face_results[found_face_ids[0]]
@@ -126,6 +137,14 @@ class TinkerHumanIdentify:
                 cv2.rectangle(img, (from_x, from_y), (to_x, to_y), (255, 0, 0), 3)
             else:
                 cv2.rectangle(img, (from_x, from_y), (to_x, to_y), (0, 0, 255), 3)
+
+    def speak_results(self, face_results):
+        num_people = len(face_results)
+        num_male = sum([is_male(face_result) for face_result in face_results.values()])
+        num_female = num_people - num_male
+        speak('I found %d people, %d male and %d female' % 
+              (num_people, num_male, num_female))
+
 
 def main():
     rospy.init_node('tinker_human_identify')

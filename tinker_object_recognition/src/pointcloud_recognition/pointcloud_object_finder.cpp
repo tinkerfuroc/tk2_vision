@@ -9,6 +9,7 @@
 #include <sensor_msgs/PointCloud2.h>
 #include <cv_bridge/cv_bridge.h>
 #include <sensor_msgs/Image.h>
+#include <cstdio>
 
 namespace tinker {
 namespace vision {
@@ -156,6 +157,8 @@ vector<PointCloudPtr> PointCloudObjectFinder::GetObjectPointClouds() {
     cv::findContours(mask, contours, hierarchy, CV_RETR_TREE,
                      CV_CHAIN_APPROX_SIMPLE);
     vector<PointCloudPtr> object_pointclouds;
+    FILE *f = fopen("/home/iarc/object_names.txt", "w");
+    int found_cnt = 0;
     for (int i = 0; i < contours.size(); i++) {
         cv::Rect boundrect = cv::boundingRect(cv::Mat(contours[i]));
         if (boundrect.width * boundrect.height < 400) continue;
@@ -170,14 +173,16 @@ vector<PointCloudPtr> PointCloudObjectFinder::GetObjectPointClouds() {
         cvi.toImageMsg(classify_srv.request.img);
         if (classify_client_.call(classify_srv)) {
             if (classify_srv.response.found &&
-                classify_srv.response.df_val < -0.2) {
+                classify_srv.response.df_val < -0.2 &&
+                classify_srv.response.name.data.find("fuck") != 0) {
                 cv::rectangle(rgb_image, cv::Point(boundrect.x, boundrect.y),
                               cv::Point(boundrect.x + boundrect.width,
                                         boundrect.y + boundrect.height),
                               cv::Scalar(0, 255, 0));
                 char label_text[200];
-                sprintf(label_text, "%s %1.3f", classify_srv.response.name.data.c_str(),
-                        classify_srv.response.df_val);
+                sprintf(label_text, "%d", found_cnt);
+                fprintf(f, "%d %s\n", found_cnt, classify_srv.response.name.data.c_str());
+                found_cnt++;
                 cv::putText(rgb_image, label_text,
                         cv::Point(boundrect.x, boundrect.y), 
                         cv::FONT_HERSHEY_DUPLEX, 0.5, cv::Scalar(0, 0, 0));
@@ -191,6 +196,7 @@ vector<PointCloudPtr> PointCloudObjectFinder::GetObjectPointClouds() {
             }
         }
     }
+    fclose(f);
     cv::imwrite("/home/iarc/result.png", rgb_image);
     return object_pointclouds;
 }
