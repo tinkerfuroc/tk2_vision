@@ -176,24 +176,33 @@ public:
         result.found = false;
         // res_mat = HistogramEqualizeRGB(res_mat);
         try {
+            ROS_INFO("Finding...");
             bow_recognition_.CalculateImageDescriptor(image,
                                                       bow_descriptor);
             int positive_count = 0;
+
+            double min_df_val = 0;
 
             for (int i = 0; i < object_classes.size(); i++) {
                 if (svms[i].predict(bow_descriptor) > 0) {
                     double df_val = svms[i].predict(bow_descriptor, true);
                     ROS_INFO("found df_val %lf for class %s", df_val,
                               object_classes[i].c_str());
-                    result.name = object_classes[i];
-                    result.id = i;
-                    result.df_val = df_val;
+                    if (df_val < min_df_val) {
+                        min_df_val = df_val;
+                        result.name = object_classes[i];
+                        result.id = i;
+                        result.df_val = df_val;
+                        ROS_INFO("found %d, df_val %f", result.found, result.df_val);
+                    }
                     positive_count++;
                 }
             }
             if (positive_count < 1) ROS_DEBUG("No found pair");
-            if (positive_count > 1) ROS_DEBUG("Too much found pair");
-            result.found = (positive_count == 1);
+            if (positive_count > 3) ROS_DEBUG("Too much found pair");
+            result.found = (positive_count > 0) && (positive_count < 3);
+            ROS_INFO("positive count %d", positive_count);
+            ROS_INFO("found %d, df_val %f", result.found, result.df_val);
             return result.found;
         } catch (cv::Exception &e) {
             ROS_DEBUG("failed to build bow descriptor: %s", e.what());

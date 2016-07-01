@@ -26,13 +26,12 @@ class CMT_track_node
 {
 public:
 
-    bool isCenterValid(cv::Mat cam_mat_masked, geometry_msgs::Point &center) {
-        printf("ofuck");
+    bool isCenterValid(cv::Mat masked_mat, cv::Mat depth_mat, geometry_msgs::Point &center) {
         center = getZeroPoint();
-        if (cam_mat_masked.empty() || k2_depth_mat_.empty()) 
+        if (masked_mat.empty() || depth_mat.empty()) 
             return false;
         tinker::vision::PointCloudPtr pcp = 
-            tinker::vision::BuildPointCloud(k2_depth_mat_, cam_mat_masked);
+            tinker::vision::BuildPointCloud(depth_mat, masked_mat);
         center = tinker::vision::GetCenter(pcp);
         ROS_INFO("find at %lf %lf %lf, %d", center.x, center.y, center.z, pcp->width);
         return (pcp->width > pointcloud_width_tolerance_);
@@ -66,8 +65,25 @@ public:
                     return;
                 }
                 //compare histogram using earth mover's distance
-                cv::Rect rect = getRectFromCMT();
-                cv::Mat hist = getHist(cam_mat_masked, rect);
+                
+                cv::Mat hist;
+                cv::Rect rect;
+                //printf("fuck1");
+                if(getRectFromCMT(rect))
+                {
+                    //just yifangwanyi
+                    //printf("fuck2");
+                    try {
+                        hist = getHist(cam_mat_masked, rect);
+                    }
+                    catch(...) {
+                        ROS_ERROR("error in cmt rect process");
+                    }
+                }
+                else
+                    // cmt SB
+                    return;
+                //printf("fuck3");
                 float emd = compare_histograms(hist, start_histogram_);
                 ROS_INFO("emd: %f", emd);
                 is_same_ = (emd < emd_threshold_);
@@ -76,7 +92,7 @@ public:
                 Draw(cam_mat); 
                 bool find = false;
                 geometry_msgs::Point center = getZeroPoint();
-                find = is_same_ && (isCenterValid(cam_mat_masked, center));
+                find = is_same_ && (isCenterValid(cam_mat_masked, k2_depth_mat_, center));
                 if(find)
                 {
                     lost_sight_cnt_ = 0;
@@ -121,10 +137,8 @@ public:
             start_rect_ = cv::Rect(fromX, fromY, toX-fromX, toY-fromY);
             cv::Mat start_mat_masked(start_mat_masked_, start_rect_);
             cv::Mat k2_depth_mat(k2_depth_mat_, start_rect_);
-            start_mat_masked.copyTo(start_mat_masked_);
-            k2_depth_mat.copyTo(k2_depth_mat_);
             geometry_msgs::Point center;
-            if(isCenterValid(start_mat_masked_, center))
+            if(isCenterValid(start_mat_masked, k2_depth_mat, center))
             {
                 Mat img_gray;
                 if (start_mat_.channels() > 1) {
@@ -161,9 +175,9 @@ public:
     cv::Mat getHist(cv::Mat &source, cv::Rect &bound) 
     {
         int rectupY = max(bound.y, 0);
-        int rectdownY = min(source.rows, bound.y+bound.height);
+        int rectdownY = min(source.rows - 1, bound.y+bound.height);
         int rectleftX = max(bound.x, 0);
-        int rectrightX = min(source.cols, bound.x+bound.width);
+        int rectrightX = min(source.cols - 1, bound.x+bound.width);
         //ROS_INFO("fuck %d %d %d %d", rectleftX, rectupY, rectrightX - rectleftX, rectdownY - rectupY);
         cv::Rect rect(rectleftX, rectupY, rectrightX - rectleftX, rectdownY - rectupY);
         cv::Mat roi(source, rect);
@@ -221,11 +235,12 @@ public:
     }
     
     
-    cv::Rect getRectFromCMT()
+    bool getRectFromCMT(cv::Rect &r)
     {
         //it seems that the bb_rot is a zhuangbi rotatedrect actually rect.
         //this B has the technique.
-        return cmt_.bb_rot.boundingRect();
+        r = cmt_.bb_rot.boundingRect();
+        return (r.x>0 && r.y>0 && r.width > 0 && r.height>0);
     }
     
     void Draw(cv::Mat &im)
@@ -236,13 +251,15 @@ public:
             cv::circle(im, cmt_.points_active[i], 2, cv::Scalar(255,0,0));
         }
         //draw rect
+        cv::Rect r;
+        if (getRectFromCMT(r))
         if(is_same_)
         {
-            cv::rectangle(im, getRectFromCMT(), cv::Scalar(255,255,255), 3);
+            cv::rectangle(im, r, cv::Scalar(255,255,255), 3);
         }
         else
         {
-            cv::rectangle(im, getRectFromCMT(), cv::Scalar(255,0,0), 3);
+            cv::rectangle(im, r, cv::Scalar(255,0,0), 3);
         }    
             
     }

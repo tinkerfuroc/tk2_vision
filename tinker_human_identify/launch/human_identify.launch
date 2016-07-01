@@ -1,0 +1,3 @@
+<launch>
+    <node name="human_identify" pkg="tinker_human_identify" type="tinker_human_identify.py" />
+</launch>

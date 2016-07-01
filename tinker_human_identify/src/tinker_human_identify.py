@@ -6,11 +6,16 @@ import rospy
 from sensor_msgs.msg import Image
 from cv_bridge import CvBridge, CvBridgeError
 from threading import Lock
-from std_srvs.srv import Empty, EmptyResponse
+from std_srvs.srv import Trigger, TriggerResponse
 from geometry_msgs.msg import PointStamped
 from tinker_vision_msgs.srv import FindOperator, FindOperatorResponse
 import numpy as np
+import subprocess
 
+
+def speak(s):
+    subprocess.Popen(('espeak', "'{}'".format(s)))
+    rospy.sleep(5)
 
 def get_bounding_box(face_result):
     from_x = face_result['faceRectangle']['left']
@@ -38,7 +43,7 @@ class TinkerHumanIdentify:
         self.bridge = CvBridge()
         self._rgb_img = None
         self._loc_img = None
-        self._train_service = rospy.Service('train_operator', Empty, self.train_operator_callback)
+        self._train_service = rospy.Service('train_operator', Trigger, self.train_operator_callback)
         self._find_service = rospy.Service('find_operator', FindOperator, self.find_operator_callback)
         self._seq = 0
     
@@ -58,22 +63,27 @@ class TinkerHumanIdentify:
 
     def train_operator_callback(self, req):
         print 'traing operator'
+        result = TriggerResponse()
+        result.success = False
         with self._l:
             if self._rgb_img is None:
-                return None
+                return result
             if self.memorize_operator(self._rgb_img):
-                return EmptyResponse()
-            return None
+                result.success = True
+                return result
+            result.success = False
+            return result
 
     def find_operator_callback(self, req):
         print 'finding operator'
         with self._l:
             if self._rgb_img is None or self._loc_img is None:
                 return None
-            operator_face = self.reidentify_operator(self._rgb_img)
-            if not operator_face:
-                return None
+            face_results, operator_face = self.reidentify_operator(self._rgb_img)
             cv2.imwrite('/home/iarc/human_result.png', self._rgb_img)
+            if not operator_face:
+                self.speak_results(face_results)
+                return None
             from_x, from_y, width, height = get_bounding_box(operator_face)
             to_x = from_x + width
             to_y = from_y + height
@@ -85,6 +95,7 @@ class TinkerHumanIdentify:
             p.point.x = float(np.mean(self._loc_img[from_y:to_y, from_x:to_x, 2])) / 1000.;
             p.point.y = float(np.mean(self._loc_img[from_y:to_y, from_x:to_x, 0])) / 1000.;
             p.point.z = float(np.mean(self._loc_img[from_y:to_y, from_x:to_x, 1])) / 1000.;
+            self.speak_results(face_results, p.point.z)
             return p
 
     def memorize_operator(self, img):
@@ -94,6 +105,11 @@ class TinkerHumanIdentify:
         face_sizes = [(i, face_size(r)) for i, r in face_results.iteritems()]
         biggest_face_id = max(face_sizes, key=lambda x: x[1])
         self._operator_id = biggest_face_id[0]
+        operator_result = face_results[self._operator_id]
+        if is_male(operator_result):
+            speak('My operator is male')
+        else:
+            speak('My operator is female')
         rospy.loginfo('operator id: ' + self._operator_id)
         return True
 
@@ -101,13 +117,17 @@ class TinkerHumanIdentify:
         found_face_ids, face_results = detect_same_face_in_img(img, self._operator_id)
         self.generate_report_img(img, face_results)
         if not found_face_ids or len(found_face_ids) > 1:
-            return None
+            return face_results, None
         operator_face = face_results[found_face_ids[0]]
         from_x, from_y, width, height = get_bounding_box(operator_face)
-        font = cv2.FONT_HERSHEY_SIMPLEX
-        cv2.putText(img, 'operator', (from_x, from_y), font, 
-                4, (255,255,255), 1, cv2.CV_AA)
-        return operator_face
+        from_x += 3
+        from_y += 3
+        width -= 6
+        height -= 6
+        to_x = from_x + width
+        to_y = from_y + height
+        cv2.rectangle(img, (from_x, from_y), (to_x, to_y), (0, 255, 0), 3)
+        return face_results, operator_face
 
     def generate_report_img(self, img, found_faces):
         for face_result in found_faces.values():
@@ -118,6 +138,22 @@ class TinkerHumanIdentify:
                 cv2.rectangle(img, (from_x, from_y), (to_x, to_y), (255, 0, 0), 3)
             else:
                 cv2.rectangle(img, (from_x, from_y), (to_x, to_y), (0, 0, 255), 3)
+
+    def speak_results(self, face_results, h=None):
+        pose_str = 'I cannot find my operator'
+        if h is not None:
+            pose = 'sitting'
+            if h > 0:
+                pose = 'standing'
+            elif h < -0.6:
+                pose = 'laying'
+            pose_str = 'my operator is ' + pose
+        num_people = len(face_results)
+        num_male = sum([is_male(face_result) for face_result in face_results.values()])
+        num_female = num_people - num_male
+        speak('I found %d people, %d male and %d female, %s' % 
+              (num_people, num_male, num_female, pose_str))
+
 
 def main():
     rospy.init_node('tinker_human_identify')

@@ -1,0 +1,21 @@
+image_class_info:
+  image_folder_name: '/home/iarc/tinker_ws/src/tk2_vision/tinker_object_recognition/img/'
+  object_classes:
+    - Choco Syrup
+    - Bisquits
+    - Baby Sweets
+    - Egg
+    - Chips
+
+    - yoghurt_peach
+    - yoghurt_strawberry
+    - energy_drink
+    - cherry_coke
+    - milk
+    - fuck
+    #- fuck2 
+    #- fuck3 
+    #- fuck4 
+  image_num: 100
+  start_num: 0
+  collect_num: 100

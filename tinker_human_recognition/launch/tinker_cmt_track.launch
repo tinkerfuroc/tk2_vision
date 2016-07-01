@@ -1,4 +1,6 @@
 <launch>
-    <node pkg="tinker_human_recognition" type="cmt_track_node" name="cmt_track_node" output="screen">       <rosparam command="load" file="$(find tinker_human_recognition)/param/CMT_track_params.yaml"/>
+    <include file = "$(find k2_client)/launch/k2_client.launch"/>
+    <node pkg="tinker_human_recognition" type="cmt_track_node" name="cmt_track_node" output="screen">       
+        <rosparam command="load" file="$(find tinker_human_recognition)/param/CMT_track_params.yaml"/>
     </node>
 </launch>

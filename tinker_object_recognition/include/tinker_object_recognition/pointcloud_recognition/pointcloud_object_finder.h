@@ -61,6 +61,12 @@ private:
     std::string frame_id_;
     int object_seq_;
     int debug_seq_;
+    double min_x_;
+    double max_x_;
+    double min_y_;
+    double max_y_;
+    double min_z_;
+    double max_z_;
     boost::mutex mutex_;
 };
 }

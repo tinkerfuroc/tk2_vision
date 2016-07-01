@@ -12,7 +12,7 @@ namespace vision {
 struct VocabTrainParams {
     VocabTrainParams()
         : trainObjClass(""),
-          vocabSize(500),
+          vocabSize(2500),
           memoryUse(200),
           descProportion(0.3f) {}
     VocabTrainParams(const std::string _trainObjClass, size_t _vocabSize,

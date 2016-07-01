@@ -1,6 +1,6 @@
 <launch>
     <node pkg="tinker_object_recognition" type="bow_train_node" name="bow_train_node" output="screen">
         <param name="vocabulary_file_name" value="test_vocabulary"/>
-        <rosparam command="load" file="$(find tinker_object_recognition)/param/image_info.yaml"/>
+        <rosparam command="load" file="$(find tinker_object_recognition)/param/image_info_new.yaml"/>
     </node>
 </launch>

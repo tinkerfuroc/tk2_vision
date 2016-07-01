@@ -126,6 +126,10 @@ public:
                 state_ = WAITING;
                 ROS_INFO("Waiting for %s", pngNameWrapper().c_str());
             }
+            if (no_counter_ % 5 == 0) {
+                cv::imshow("kinect", cam_mat);
+            }
+            return;
         } 
         cv::imshow("kinect", cam_mat);
         return;
