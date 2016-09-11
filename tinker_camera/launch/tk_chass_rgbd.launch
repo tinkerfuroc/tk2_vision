@@ -1,0 +1,4 @@
+<launch>
+  <include file="$(find tinker_camera)/launch/tk_back_xtion.launch"/>
+  <include file="$(find tinker_camera)/launch/tk_front_primesense.launch"/>
+</launch>
