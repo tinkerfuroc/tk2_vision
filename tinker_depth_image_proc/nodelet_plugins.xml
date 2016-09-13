@@ -1,0 +1,11 @@
+<library path="lib/libtinker_depth_image_proc">
+
+  <class name="tinker_depth_image_proc/depth_outlier_removal"
+     type="tinker::vision::DepthOutlierRemovalNodelet"
+     base_class_type="nodelet::Nodelet">
+    <description>
+      Nodelet to filter depth image to remove outliers
+    </description>
+  </class>
+</library>
+
