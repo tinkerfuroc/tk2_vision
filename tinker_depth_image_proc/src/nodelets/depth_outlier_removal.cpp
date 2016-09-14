@@ -31,7 +31,7 @@ private:
         if (filtered_depth_pub_.getNumSubscribers() == 0) {
             raw_depth_sub_.shutdown();
         } else if (!raw_depth_sub_) {
-            ROS_INFO("Filter connected!");
+            ROS_DEBUG("Filter connected!");
             raw_depth_sub_ = it_->subscribe(
                 "image_raw", 1, &DepthOutlierRemovalNodelet::DepthCb, this,
                 image_transport::TransportHints());
@@ -39,7 +39,6 @@ private:
     }
 
     void DepthCb(const sensor_msgs::ImageConstPtr &raw_depth_msg) {
-        ROS_INFO("Filtering depth!");
         cv_bridge::CvImagePtr cv_ptr;
         try {
             cv_ptr = cv_bridge::toCvCopy(raw_depth_msg);
@@ -54,8 +53,8 @@ private:
             return;
         }
 
-        DilateImage(cv_ptr->image, 5);
-        ErodeImage(cv_ptr->image, 5);
+        ErodeImage(cv_ptr->image, 9);
+        DilateImage(cv_ptr->image, 9);
 
         filtered_depth_pub_.publish(cv_ptr->toImageMsg());
     }

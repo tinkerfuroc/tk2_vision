@@ -149,7 +149,6 @@ SET(SRC_FILE
     src/pointcloud_recognition/pointcloud_object_finder.cpp
     src/arm_target_finder/ForegroundDetector.cpp
     src/utilities.cpp
-    
 )
 
 ## Declare a C++ library

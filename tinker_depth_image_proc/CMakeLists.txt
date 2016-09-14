@@ -9,13 +9,9 @@ find_package(catkin REQUIRED COMPONENTS
   cv_bridge
   sensor_msgs
   roscpp
-  rospy
   tf
   message_generation
-  tinker_camera
   tinker_object_recognition
-  tinker_vision_msgs
-  image_transport
   nodelet
 )
 find_package(Boost REQUIRED)
@@ -110,6 +106,8 @@ find_package(OpenCV REQUIRED)
 catkin_package(
     #INCLUDE_DIRS include
     LIBRARIES tinker_depth_image_proc
+    CATKIN_DEPENDS roscpp sensor_msgs image_transport
+    DEPENDS system_lib boost opencv 
 )
 
 ###########
@@ -142,9 +140,11 @@ add_library(tinker_depth_image_proc
 # add_dependencies(tinker_depth_image_proc_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Specify libraries to link a library or executable target against
-# target_link_libraries(tinker_depth_image_proc_node
-#   ${catkin_LIBRARIES}
-# )
+target_link_libraries(tinker_depth_image_proc
+  ${catkin_LIBRARIES}
+  ${OpenCV_LIBS}
+  ${PCL_LIBRARIES}
+)
 
 #############
 ## Install ##
@@ -152,7 +152,7 @@ add_library(tinker_depth_image_proc
 install(TARGETS tinker_depth_image_proc
         DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
 )
-install(FILES nodelet_plugins.xml
+install(FILES ./nodelet_plugins.xml
         DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
 )
 
