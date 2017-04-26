@@ -1,9 +1,0 @@
-<launch>
-    <include file="$(find k2_client)/launch/k2_client.launch"/>
-    <node pkg="tinker_object_recognition" type="kinect_collect_sample" name="collect_sample_node" output="screen">
-        <param name="filepath" value="$(find tinker_object_recognition)/img/"/>
-        <param name="image_topic" value="/head/kinect2/rgb/image_color"/> 
-        <rosparam command="load" file="$(find tinker_object_recognition)/param/image_info.yaml"/>
-        <rosparam command="load" file="$(find tinker_object_recognition)/param/fd_param.yaml"/>
-    </node>
-</launch>
