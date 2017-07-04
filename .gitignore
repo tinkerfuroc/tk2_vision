@@ -21,3 +21,6 @@ deletesim.txt
 buildimg
 *.pyc
 .ycm_extra_conf.py
+
+*.npy
+synset.txt
