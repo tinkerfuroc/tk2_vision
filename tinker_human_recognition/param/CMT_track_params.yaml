@@ -1,7 +1,0 @@
-CMT_track_params :
-    emd_threshold : 6.0
-    min_depth : 0.6
-    max_depth : 3.5
-    lost_sight_tolerance : 20
-    
-    

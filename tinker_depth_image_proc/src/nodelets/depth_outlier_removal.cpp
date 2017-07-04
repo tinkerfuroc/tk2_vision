@@ -7,7 +7,7 @@
 #include <string>
 #include <sensor_msgs/Image.h>
 #include <cv_bridge/cv_bridge.h>
-#include <tinker_object_recognition/graph_filter/filters.h>
+#include <tinker_depth_image_proc/filters/filters.h>
 
 
 namespace tinker {

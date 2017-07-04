@@ -11,12 +11,11 @@ find_package(catkin REQUIRED COMPONENTS
   roscpp
   tf
   message_generation
-  tinker_object_recognition
   nodelet
 )
 find_package(Boost REQUIRED)
 find_package(OpenCV REQUIRED)
-
+find_package(PCL REQUIRED)
 
 ## Uncomment this if the package has a setup.py. This macro ensures
 ## modules and global scripts declared therein get installed
@@ -124,6 +123,7 @@ include_directories(include
 
 ## Declare a C++ library
 add_library(tinker_depth_image_proc
+    ./src/filters/filters.cpp
     ./src/nodelets/depth_outlier_removal.cpp
 )
 
